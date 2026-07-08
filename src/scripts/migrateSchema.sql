@@ -1,0 +1,174 @@
+-- ============================================================
+-- Zythologue - Schéma de la base de données
+-- PostgreSQL 18
+-- ============================================================
+
+-- Drop dans l'ordre inverse des dépendances pour réexécution propre
+DROP TABLE IF EXISTS beer_ingredient CASCADE;
+DROP TABLE IF EXISTS beer_category CASCADE;
+DROP TABLE IF EXISTS brewery_favorite CASCADE;
+DROP TABLE IF EXISTS beer_favorite CASCADE;
+DROP TABLE IF EXISTS brewery_photo CASCADE;
+DROP TABLE IF EXISTS beer_photo CASCADE;
+DROP TABLE IF EXISTS brewery_review CASCADE;
+DROP TABLE IF EXISTS beer_review CASCADE;
+DROP TABLE IF EXISTS beer_log CASCADE;
+DROP TABLE IF EXISTS beer CASCADE;
+DROP TABLE IF EXISTS ingredient CASCADE;
+DROP TABLE IF EXISTS category CASCADE;
+DROP TABLE IF EXISTS brewery CASCADE;
+DROP TABLE IF EXISTS "user" CASCADE;
+
+-- ============================================================
+-- Tables indépendantes (sans FK sortante)
+-- ============================================================
+
+-- "user" est un mot réservé PostgreSQL, on le quote
+CREATE TABLE IF NOT EXISTS "user" (
+    id          SERIAL PRIMARY KEY,
+    lastname    VARCHAR(100)  NOT NULL,
+    firstname   VARCHAR(100)  NOT NULL,
+    email       VARCHAR(255)  NOT NULL UNIQUE,
+    password    VARCHAR(255)  NOT NULL,
+    birthdate   DATE          NOT NULL,
+    role        VARCHAR(10)   NOT NULL DEFAULT 'client'
+                    CHECK (role IN ('client', 'admin')),
+    created_at  TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
+    updated_at  TIMESTAMPTZ   NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS brewery (
+    id          SERIAL PRIMARY KEY,
+    name        VARCHAR(255)  NOT NULL,
+    description TEXT          NOT NULL,
+    country     VARCHAR(100)  NOT NULL,
+    city        VARCHAR(100)  NOT NULL,
+    website     TEXT
+);
+
+CREATE TABLE IF NOT EXISTS category (
+    id          SERIAL PRIMARY KEY,
+    name        VARCHAR(255)  NOT NULL,
+    description TEXT          NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS ingredient (
+    id          SERIAL PRIMARY KEY,
+    name        VARCHAR(255)  NOT NULL,
+    description TEXT
+);
+
+-- ============================================================
+-- Tables avec FK
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS beer (
+    id              SERIAL PRIMARY KEY,
+    name            VARCHAR(255)    NOT NULL,
+    description     TEXT,
+    price           NUMERIC(6,2)    NOT NULL CHECK (price >= 0),
+    alcohol_level   NUMERIC(4,1)    NOT NULL CHECK (alcohol_level >= 0),
+    is_alcohol_free BOOLEAN         NOT NULL,
+    brewery_id      INTEGER         NOT NULL
+                        REFERENCES brewery(id) ON DELETE CASCADE
+);
+
+-- ============================================================
+-- Journalisation des insertions de bières
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS beer_log (
+    id          SERIAL          PRIMARY KEY,
+    beer_id     INTEGER         NOT NULL
+                    REFERENCES beer(id) ON DELETE CASCADE,
+    beer_name   VARCHAR(255)    NOT NULL,
+    action      VARCHAR(10)     NOT NULL DEFAULT 'INSERT'
+                    CHECK (action IN ('INSERT')),
+    logged_at   TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+    logged_by   VARCHAR(100)    NOT NULL DEFAULT current_user
+);
+
+-- Fonction déclenchée automatiquement à chaque INSERT sur beer
+CREATE OR REPLACE FUNCTION fn_log_beer_insert()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    INSERT INTO beer_log (beer_id, beer_name, action, logged_at, logged_by)
+    VALUES (NEW.id, NEW.name, 'INSERT', NOW(), current_user);
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_beer_insert_log
+AFTER INSERT ON beer
+FOR EACH ROW
+EXECUTE FUNCTION fn_log_beer_insert();
+
+CREATE TABLE IF NOT EXISTS beer_review (
+    id          SERIAL PRIMARY KEY,
+    grade       INTEGER         NOT NULL CHECK (grade BETWEEN 1 AND 10),
+    comment     TEXT,
+    created_at  TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+    user_id     INTEGER         NOT NULL
+                    REFERENCES "user"(id) ON DELETE CASCADE,
+    beer_id     INTEGER         NOT NULL
+                    REFERENCES beer(id) ON DELETE CASCADE,
+    UNIQUE (user_id, beer_id)
+);
+
+CREATE TABLE IF NOT EXISTS brewery_review (
+    id          SERIAL PRIMARY KEY,
+    grade       INTEGER         NOT NULL CHECK (grade BETWEEN 1 AND 10),
+    comment     TEXT,
+    created_at  TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+    user_id     INTEGER         NOT NULL
+                    REFERENCES "user"(id) ON DELETE CASCADE,
+    brewery_id  INTEGER         NOT NULL
+                    REFERENCES brewery(id) ON DELETE CASCADE,
+    UNIQUE (user_id, brewery_id)
+);
+
+CREATE TABLE IF NOT EXISTS beer_photo (
+    id      SERIAL PRIMARY KEY,
+    url     TEXT    NOT NULL,
+    beer_id INTEGER NOT NULL
+                REFERENCES beer(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS brewery_photo (
+    id          SERIAL PRIMARY KEY,
+    url         TEXT    NOT NULL,
+    brewery_id  INTEGER NOT NULL
+                    REFERENCES brewery(id) ON DELETE CASCADE
+);
+
+-- ============================================================
+-- Tables de liaison (clés primaires composites)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS beer_favorite (
+    user_id     INTEGER     NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+    beer_id     INTEGER     NOT NULL REFERENCES beer(id) ON DELETE CASCADE,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (user_id, beer_id)
+);
+
+CREATE TABLE IF NOT EXISTS brewery_favorite (
+    user_id     INTEGER     NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+    brewery_id  INTEGER     NOT NULL REFERENCES brewery(id) ON DELETE CASCADE,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (user_id, brewery_id)
+);
+
+CREATE TABLE IF NOT EXISTS beer_category (
+    beer_id     INTEGER NOT NULL REFERENCES beer(id) ON DELETE CASCADE,
+    category_id INTEGER NOT NULL REFERENCES category(id) ON DELETE CASCADE,
+    PRIMARY KEY (beer_id, category_id)
+);
+
+CREATE TABLE IF NOT EXISTS beer_ingredient (
+    beer_id       INTEGER NOT NULL REFERENCES beer(id) ON DELETE CASCADE,
+    ingredient_id INTEGER NOT NULL REFERENCES ingredient(id) ON DELETE CASCADE,
+    PRIMARY KEY (beer_id, ingredient_id)
+);
