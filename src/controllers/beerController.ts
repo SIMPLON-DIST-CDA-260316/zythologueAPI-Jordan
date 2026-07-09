@@ -9,7 +9,29 @@ export class BeerController {
   }
 
   getAll = async (_req: Request, res: Response): Promise<void> => {
-    const beers = await this.beerService.getAll();
-    res.json(beers);
+    try {
+      const beers = await this.beerService.getAll();
+      res.status(200).json(beers);
+    } catch (err) {
+      res.status(500).json({ message: (err as Error).message });
+    }
+  };
+
+  getOneById = async (req: Request, res: Response): Promise<void> => {
+    const beerId = Number(req.params.id);
+    if (isNaN(beerId) || beerId <= 0) {
+      res.status(400).json({ message: `L'identifiant n'est pas conforme` });
+      return;
+    }
+    try {
+      const beer = await this.beerService.getOneById(beerId);
+      if (!beer) {
+        res.status(404).json({ message: "Bière non trouvée" });
+        return;
+      }
+      res.status(200).json(beer);
+    } catch (err) {
+      res.status(500).json({ message: (err as Error).message });
+    }
   };
 }

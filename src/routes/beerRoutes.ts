@@ -13,4 +13,7 @@ const router = Router();
 // Route racine de l'API beers : récupère toutes les bières
 router.get("/", beerController.getAll);
 
+// Route pour récupérer une bière par son id
+router.get("/:id", beerController.getOneById);
+
 export default router;

@@ -1,9 +1,4 @@
-import express, {
-  type Express,
-  type NextFunction,
-  type Request,
-  type Response,
-} from "express";
+import express, { type Express, type Request, type Response } from "express";
 import { pool } from "./db.ts";
 import beerRoutes from "./routes/beerRoutes.ts";
 
@@ -24,10 +19,6 @@ app.get("/api/health/db", async (_req: Request, res: Response) => {
 });
 
 app.use("/api/beers", beerRoutes);
-
-app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
-  res.status(500).json({ status: "error", message: (err as Error).message });
-});
 
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
