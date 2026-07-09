@@ -1,20 +1,32 @@
-import express, { type Express, type Request, type Response } from "express";
+import express, {
+  type Express,
+  type NextFunction,
+  type Request,
+  type Response,
+} from "express";
 import { pool } from "./db.ts";
+import beerRoutes from "./routes/beerRoutes.ts";
 
 const app: Express = express();
 const port = process.env.PORT ?? 3000;
 
-app.get("/", (_req: Request, res: Response) => {
-  res.send("Hello World!");
+app.get("/api", (_req: Request, res: Response) => {
+  res.send("Hello Zythologue!");
 });
 
-app.get("/health/db", async (_req: Request, res: Response) => {
+app.get("/api/health/db", async (_req: Request, res: Response) => {
   try {
     const result = await pool.query("SELECT NOW()");
     res.json({ status: "ok", time: result.rows[0].now });
   } catch (err) {
     res.status(500).json({ status: "error", message: (err as Error).message });
   }
+});
+
+app.use("/api/beers", beerRoutes);
+
+app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+  res.status(500).json({ status: "error", message: (err as Error).message });
 });
 
 app.listen(port, () => {
