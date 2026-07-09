@@ -16,4 +16,7 @@ router.get("/", beerController.getAll);
 // Route pour récupérer une bière par son id
 router.get("/:id", beerController.getOneById);
 
+// Route pour supprimer une bière par son id
+router.delete("/:id", beerController.deleteOneById);
+
 export default router;

@@ -15,4 +15,8 @@ export class BeerService {
   async getOneById(beerId: number): Promise<Beer | null> {
     return this.beerRepository.findOneById(beerId);
   }
+
+  async deleteOneById(beerId: number): Promise<boolean> {
+    return this.beerRepository.deleteOneById(beerId);
+  }
 }

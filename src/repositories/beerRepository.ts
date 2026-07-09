@@ -27,4 +27,11 @@ export class BeerRepository {
     const row = result.rows[0];
     return row ? Beer.fromRow(row) : null;
   }
+
+  async deleteOneById(beerId: number): Promise<boolean> {
+    const result = await this.pool.query(`DELETE FROM beer WHERE id = $1`, [
+      beerId,
+    ]);
+    return result.rowCount === 0 ? false : true;
+  }
 }
