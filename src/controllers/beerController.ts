@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { createBeerSchema } from "../schemas/beerSchema.ts";
 import type { BeerService } from "../services/beerService.ts";
 
 export class BeerController {
@@ -48,6 +49,26 @@ export class BeerController {
         return;
       }
       res.status(204).send();
+    } catch (err) {
+      res.status(500).json({ message: (err as Error).message });
+    }
+  };
+
+  addOne = async (req: Request, res: Response): Promise<void> => {
+    const parsed = createBeerSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ message: "Données invalides", errors: parsed.error.flatten() });
+      return;
+    }
+    try {
+      const addedBeer = await this.beerService.addOne(parsed.data);
+      if (addedBeer === "BREWERY_NOT_FOUND") {
+        res.status(404).json({ message: `Brasserie non trouvée` });
+        return;
+      }
+      res.status(201).json(addedBeer);
     } catch (err) {
       res.status(500).json({ message: (err as Error).message });
     }

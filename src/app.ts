@@ -5,6 +5,8 @@ import beerRoutes from "./routes/beerRoutes.ts";
 const app: Express = express();
 const port = process.env.PORT ?? 3000;
 
+app.use(express.json());
+
 app.get("/api", (_req: Request, res: Response) => {
   res.send("Hello Zythologue!");
 });

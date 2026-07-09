@@ -19,4 +19,7 @@ router.get("/:id", beerController.getOneById);
 // Route pour supprimer une bière par son id
 router.delete("/:id", beerController.deleteOneById);
 
+// Route pour ajouter une bière
+router.post("/", beerController.addOne);
+
 export default router;
