@@ -19,7 +19,7 @@ export class BeerController {
 
   getOneById = async (req: Request, res: Response): Promise<void> => {
     const beerId = Number(req.params.id);
-    if (isNaN(beerId) || beerId <= 0) {
+    if (isNaN(beerId) || !Number.isInteger(beerId) || beerId <= 0) {
       res.status(400).json({ message: `L'identifiant n'est pas conforme` });
       return;
     }
@@ -37,7 +37,7 @@ export class BeerController {
 
   deleteOneById = async (req: Request, res: Response): Promise<void> => {
     const beerId = Number(req.params.id);
-    if (isNaN(beerId) || beerId <= 0) {
+    if (isNaN(beerId) || !Number.isInteger(beerId) || beerId <= 0) {
       res.status(400).json({ message: `L'identifiant n'est pas conforme` });
       return;
     }
