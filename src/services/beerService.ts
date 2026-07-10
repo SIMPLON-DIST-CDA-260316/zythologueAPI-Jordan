@@ -23,9 +23,15 @@ export class BeerService {
 
   async addOne(
     beerInput: CreateBeerInput,
-  ): Promise<Beer | "BREWERY_NOT_FOUND"> {
-    const exists = await this.beerRepository.breweryExists(beerInput.breweryId);
-    if (!exists) return "BREWERY_NOT_FOUND";
+  ): Promise<Beer | "BREWERY_NOT_FOUND" | "NAME_ALREADY_EXISTS"> {
+    const breweryExists = await this.beerRepository.breweryExists(
+      beerInput.breweryId,
+    );
+    if (!breweryExists) return "BREWERY_NOT_FOUND";
+    const beerNameExists = await this.beerRepository.beerNameExists(
+      beerInput.name,
+    );
+    if (beerNameExists) return "NAME_ALREADY_EXISTS";
     return this.beerRepository.addOne(beerInput);
   }
 }

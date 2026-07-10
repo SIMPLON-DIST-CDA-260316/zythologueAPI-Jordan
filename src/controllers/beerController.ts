@@ -68,6 +68,10 @@ export class BeerController {
         res.status(404).json({ message: `Brasserie non trouvée` });
         return;
       }
+      if (addedBeer === "NAME_ALREADY_EXISTS") {
+        res.status(409).json({ message: `Une bière de ce nom existe déjà` });
+        return;
+      }
       res.status(201).json(addedBeer);
     } catch (err) {
       res.status(500).json({ message: (err as Error).message });

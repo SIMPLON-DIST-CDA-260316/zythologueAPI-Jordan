@@ -44,6 +44,13 @@ export class BeerRepository {
     return brewery.rows.length > 0;
   }
 
+  async beerNameExists(beerName: string): Promise<boolean> {
+    const beer = await this.pool.query(`SELECT id FROM beer WHERE name = $1`, [
+      beerName,
+    ]);
+    return beer.rows.length > 0;
+  }
+
   async addOne(beerInput: CreateBeerInput): Promise<Beer> {
     const newBeer = await this.pool.query<{ id: number }>(
       `INSERT INTO beer (name, description, price, alcohol_level, is_alcohol_free, brewery_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
