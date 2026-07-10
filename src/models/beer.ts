@@ -6,6 +6,7 @@ export interface BeerRow {
   alcohol_level: string;
   is_alcohol_free: boolean;
   breweryName: string;
+  breweryId: number;
 }
 
 export class Beer {
@@ -16,6 +17,7 @@ export class Beer {
   readonly alcoholLevel: number;
   readonly isAlcoholFree: boolean;
   readonly breweryName: string;
+  readonly breweryId: number;
 
   constructor(
     id: number,
@@ -25,6 +27,7 @@ export class Beer {
     alcoholLevel: number,
     isAlcoholFree: boolean,
     breweryName: string,
+    breweryId: number,
   ) {
     this.id = id;
     this.name = name;
@@ -33,6 +36,7 @@ export class Beer {
     this.alcoholLevel = alcoholLevel;
     this.isAlcoholFree = isAlcoholFree;
     this.breweryName = breweryName;
+    this.breweryId = breweryId;
   }
 
   static fromRow(row: BeerRow): Beer {
@@ -44,6 +48,7 @@ export class Beer {
       Number(row.alcohol_level),
       row.is_alcohol_free,
       row.breweryName,
+      row.breweryId,
     );
   }
 }
