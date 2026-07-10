@@ -1,5 +1,9 @@
 import type { Request, Response } from "express";
-import { createBeerSchema, patchBeerSchema } from "../schemas/beerSchema.ts";
+import {
+  createBeerSchema,
+  getBeersQuerySchema,
+  patchBeerSchema,
+} from "../schemas/beerSchema.ts";
 import type { BeerService } from "../services/beerService.ts";
 
 export class BeerController {
@@ -9,10 +13,18 @@ export class BeerController {
     this.beerService = beerService;
   }
 
-  getAll = async (_req: Request, res: Response): Promise<void> => {
+  getAll = async (req: Request, res: Response): Promise<void> => {
+    const parsed = getBeersQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      res.status(400).json({
+        message: "Paramètres de requête invalides",
+        errors: parsed.error.flatten(),
+      });
+      return;
+    }
     try {
-      const beers = await this.beerService.getAll();
-      res.status(200).json(beers);
+      const result = await this.beerService.getAll(parsed.data);
+      res.status(200).json(result);
     } catch (err) {
       res.status(500).json({ message: (err as Error).message });
     }

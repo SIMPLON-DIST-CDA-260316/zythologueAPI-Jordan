@@ -1,6 +1,10 @@
 import type { Beer } from "../models/beer.ts";
 import type { BeerRepository } from "../repositories/beerRepository.ts";
-import type { CreateBeerInput, PatchBeerInput } from "../schemas/beerSchema.ts";
+import type {
+  CreateBeerInput,
+  GetBeersQuery,
+  PatchBeerInput,
+} from "../schemas/beerSchema.ts";
 
 export class BeerService {
   private readonly beerRepository: BeerRepository;
@@ -9,8 +13,21 @@ export class BeerService {
     this.beerRepository = beerRepository;
   }
 
-  async getAll(): Promise<Beer[]> {
-    return this.beerRepository.findAll();
+  async getAll(query: GetBeersQuery): Promise<{
+    data: Beer[];
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  }> {
+    const { beers, total } = await this.beerRepository.findAll(query);
+    return {
+      data: beers,
+      page: query.page,
+      limit: query.limit,
+      total,
+      totalPages: Math.ceil(total / query.limit),
+    };
   }
 
   async getOneById(beerId: number): Promise<Beer | null> {

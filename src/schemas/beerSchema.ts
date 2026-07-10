@@ -31,3 +31,19 @@ export const patchBeerSchema = z
   });
 
 export type PatchBeerInput = z.infer<typeof patchBeerSchema>;
+
+export const getBeersQuerySchema = z
+  .object({
+    breweryId: z.coerce.number().int().positive().optional(),
+    isAlcoholFree: z
+      .enum(["true", "false"])
+      .optional()
+      .transform((v) => (v === undefined ? undefined : v === "true")),
+    sortBy: z.enum(["price", "alcoholLevel"]).optional(),
+    order: z.enum(["asc", "desc"]).default("asc"),
+    page: z.coerce.number().int().positive().default(1),
+    limit: z.coerce.number().int().positive().max(100).default(5),
+  })
+  .strict();
+
+export type GetBeersQuery = z.infer<typeof getBeersQuerySchema>;

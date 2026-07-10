@@ -9,14 +9,36 @@ export class BeerRepository {
     this.pool = pool;
   }
 
-  async findAll(): Promise<Beer[]> {
-    const result = await this.pool.query<BeerRow>(
-      `SELECT be.id, be.name, be.description, be.price, be.alcohol_level, be.is_alcohol_free, br.name AS "breweryName", be.brewery_id AS "breweryId"
+  async findAll(filters: {
+    breweryId?: number;
+    isAlcoholFree?: boolean;
+    sortBy?: "price" | "alcoholLevel";
+    order: "asc" | "desc";
+    page: number;
+    limit: number;
+  }): Promise<{ beers: Beer[]; total: number }> {
+    const sortColumn =
+      filters.sortBy === "price"
+        ? "be.price"
+        : filters.sortBy === "alcoholLevel"
+          ? "be.alcohol_level"
+          : "be.id";
+    const direction = filters.order === "desc" ? "DESC" : "ASC";
+    const offset = (filters.page - 1) * filters.limit;
+
+    const result = await this.pool.query<BeerRow & { total: string }>(
+      `SELECT be.id, be.name, be.description, be.price, be.alcohol_level, be.is_alcohol_free,
+              br.name AS "breweryName", be.brewery_id AS "breweryId", COUNT(*) OVER() AS total
        FROM beer AS be JOIN brewery AS br ON be.brewery_id = br.id
-       ORDER BY id`,
+       WHERE ($1::int IS NULL OR be.brewery_id = $1)
+         AND ($2::boolean IS NULL OR be.is_alcohol_free = $2)
+       ORDER BY ${sortColumn} ${direction}
+       LIMIT $3 OFFSET $4`,
+      [filters.breweryId ?? null, filters.isAlcoholFree ?? null, filters.limit, offset],
     );
 
-    return result.rows.map(Beer.fromRow);
+    const total = result.rows[0] ? Number(result.rows[0].total) : 0;
+    return { beers: result.rows.map(Beer.fromRow), total };
   }
 
   async findOneById(beerId: number): Promise<Beer | null> {

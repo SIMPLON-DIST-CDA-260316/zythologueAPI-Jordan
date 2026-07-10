@@ -73,20 +73,38 @@ En cas d'erreur serveur inattendue (code `500`), la réponse a la forme `{ "mess
 
 ### GET /api/beers
 
-Récupère la liste de toutes les bières.
+Récupère une liste paginée de bières, avec filtrage et tri optionnels.
 
-**Paramètres** : aucun.
+**Query params** (tous optionnels, toute clé non listée ci-dessous est rejetée en 400)
+
+| Nom | Type | Valeurs acceptées | Défaut | Description |
+|---|---|---|---|---|
+| `breweryId` | number | entier positif | — | Filtre les bières d'une brasserie donnée |
+| `isAlcoholFree` | boolean | `true` \| `false` | — | Filtre par présence/absence d'alcool |
+| `sortBy` | string | `price` \| `alcoholLevel` | tri par `id` | Champ de tri |
+| `order` | string | `asc` \| `desc` | `asc` | Sens du tri |
+| `page` | number | entier positif | `1` | Numéro de page |
+| `limit` | number | entier positif, max 100 | `5` | Nombre de résultats par page |
+
+**Exemple** : `GET /api/beers?breweryId=2&sortBy=price&order=desc&page=1&limit=5`
 
 **Réponses**
 
 | Code | Cas | Corps |
 |---|---|---|
-| 200 | Succès | Tableau de bières (voir [Ressource Beer](#ressource-beer)) |
+| 200 | Succès | `{ data, page, limit, total, totalPages }` |
+| 400 | Query param invalide ou clé inconnue | `{ "message": "Paramètres de requête invalides", "errors": {...} }` |
 
 ```json
-[
-  { "id": 1, "name": "Chouffe", "description": "Bière belge ambrée épicée", "price": 3.5, "alcoholLevel": 8, "isAlcoholFree": false, "breweryName": "Brasserie d'Achouffe", "breweryId": 2 }
-]
+{
+  "data": [
+    { "id": 1, "name": "Chouffe", "description": "Bière belge ambrée épicée", "price": 3.5, "alcoholLevel": 8, "isAlcoholFree": false, "breweryName": "Brasserie d'Achouffe", "breweryId": 2 }
+  ],
+  "page": 1,
+  "limit": 5,
+  "total": 12,
+  "totalPages": 3
+}
 ```
 
 ---
