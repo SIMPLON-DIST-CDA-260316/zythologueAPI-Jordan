@@ -13,6 +13,15 @@ export class BeerController {
     this.beerService = beerService;
   }
 
+  private parseBeerId(req: Request, res: Response): number | null {
+    const beerId = Number(req.params.id);
+    if (isNaN(beerId) || !Number.isInteger(beerId) || beerId <= 0) {
+      res.status(400).json({ message: `L'identifiant n'est pas conforme` });
+      return null;
+    }
+    return beerId;
+  }
+
   getAll = async (req: Request, res: Response): Promise<void> => {
     const parsed = getBeersQuerySchema.safeParse(req.query);
     if (!parsed.success) {
@@ -31,11 +40,8 @@ export class BeerController {
   };
 
   getOneById = async (req: Request, res: Response): Promise<void> => {
-    const beerId = Number(req.params.id);
-    if (isNaN(beerId) || !Number.isInteger(beerId) || beerId <= 0) {
-      res.status(400).json({ message: `L'identifiant n'est pas conforme` });
-      return;
-    }
+    const beerId = this.parseBeerId(req, res);
+    if (beerId === null) return;
     try {
       const beer = await this.beerService.getOneById(beerId);
       if (!beer) {
@@ -49,11 +55,8 @@ export class BeerController {
   };
 
   deleteOneById = async (req: Request, res: Response): Promise<void> => {
-    const beerId = Number(req.params.id);
-    if (isNaN(beerId) || !Number.isInteger(beerId) || beerId <= 0) {
-      res.status(400).json({ message: `L'identifiant n'est pas conforme` });
-      return;
-    }
+    const beerId = this.parseBeerId(req, res);
+    if (beerId === null) return;
     try {
       const deletedBeer = await this.beerService.deleteOneById(beerId);
       if (!deletedBeer) {
@@ -91,11 +94,8 @@ export class BeerController {
   };
 
   updateOneById = async (req: Request, res: Response): Promise<void> => {
-    const beerId = Number(req.params.id);
-    if (isNaN(beerId) || !Number.isInteger(beerId) || beerId <= 0) {
-      res.status(400).json({ message: `L'identifiant n'est pas conforme` });
-      return;
-    }
+    const beerId = this.parseBeerId(req, res);
+    if (beerId === null) return;
 
     const parsed = patchBeerSchema.safeParse(req.body);
     if (!parsed.success) {
