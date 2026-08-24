@@ -37,6 +37,8 @@ Chaque route suit la même chaîne de responsabilité :
 
 L'API est alors disponible sur `http://localhost:3000/api/beers` (port configurable via la variable d'environnement `PORT`).
 
+Une documentation interactive (Swagger UI) est disponible sur `http://localhost:3000/api-docs` : elle permet de consulter chaque endpoint et de l'exécuter directement contre l'API réelle ("Try it out").
+
 ## Ressource `Beer`
 
 Exemple de représentation JSON d'une bière telle que renvoyée par l'API :
