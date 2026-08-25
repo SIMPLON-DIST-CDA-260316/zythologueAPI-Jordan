@@ -40,6 +40,41 @@ const beerExample = {
   breweryId: 2,
 };
 
+const beerLogSchema = {
+  type: "object",
+  properties: {
+    id: { type: "integer", description: "Identifiant unique de l'entrée de log" },
+    beerId: { type: "integer", description: "Identifiant de la bière concernée" },
+    beerName: {
+      type: "string",
+      description: "Nom de la bière au moment de l'insertion",
+    },
+    action: {
+      type: "string",
+      enum: ["INSERT"],
+      description: "Type d'action journalisée (uniquement les créations de bières)",
+    },
+    loggedAt: {
+      type: "string",
+      format: "date-time",
+      description: "Date et heure de l'action",
+    },
+    loggedBy: {
+      type: "string",
+      description: "Rôle/utilisateur PostgreSQL à l'origine de l'action",
+    },
+  },
+};
+
+const beerLogExample = {
+  id: 1,
+  beerId: 1,
+  beerName: "Chimay Rouge (Première)",
+  action: "INSERT",
+  loggedAt: "2024-01-10T10:00:00Z",
+  loggedBy: "zythologue",
+};
+
 const errorSchema = {
   type: "object",
   properties: {
@@ -109,6 +144,7 @@ export const openapiSpec = {
   components: {
     schemas: {
       Beer: beerSchema,
+      BeerLog: beerLogSchema,
       Error: errorSchema,
     },
   },
@@ -345,6 +381,79 @@ export const openapiSpec = {
           "204": { description: "Bière supprimée" },
           "400": idInvalidResponse,
           "404": beerNotFoundResponse,
+        },
+      },
+    },
+    "/beer-logs": {
+      get: {
+        summary:
+          "Liste paginée du journal des insertions de bières (alimenté automatiquement par un trigger PostgreSQL, lecture seule)",
+        parameters: [
+          {
+            name: "beerId",
+            in: "query",
+            description: "Filtre les entrées concernant une bière donnée",
+            schema: { type: "integer", minimum: 1 },
+          },
+          {
+            name: "order",
+            in: "query",
+            description: "Sens du tri par date de journalisation",
+            schema: { type: "string", enum: ["asc", "desc"], default: "desc" },
+          },
+          {
+            name: "page",
+            in: "query",
+            description: "Numéro de page",
+            schema: { type: "integer", minimum: 1, default: 1 },
+          },
+          {
+            name: "limit",
+            in: "query",
+            description: "Nombre de résultats par page (max 100)",
+            schema: { type: "integer", minimum: 1, maximum: 100, default: 5 },
+          },
+        ],
+        responses: {
+          "200": {
+            description: "Succès",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    data: {
+                      type: "array",
+                      items: { $ref: "#/components/schemas/BeerLog" },
+                    },
+                    page: { type: "integer" },
+                    limit: { type: "integer" },
+                    total: { type: "integer" },
+                    totalPages: { type: "integer" },
+                  },
+                },
+                example: {
+                  data: [beerLogExample],
+                  page: 1,
+                  limit: 5,
+                  total: 30,
+                  totalPages: 6,
+                },
+              },
+            },
+          },
+          "400": {
+            description: "Query param invalide ou clé inconnue",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: {
+                  message: "Paramètres de requête invalides",
+                  errors: {},
+                },
+              },
+            },
+          },
         },
       },
     },
