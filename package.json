@@ -3,9 +3,9 @@
   "scripts": {
     "dev": "docker compose up --build",
     "dev:app": "tsx watch src/app.ts",
-    "migrate": "tsx src/scripts/migrate.ts",
+    "migrate": "tsx scripts/migrate.ts",
     "db:migrate": "docker compose exec api npm run migrate",
-    "seed": "tsx src/scripts/seed.ts",
+    "seed": "tsx scripts/seed.ts",
     "db:seed": "docker compose exec api npm run seed",
     "typecheck": "tsc --noEmit"
   },
