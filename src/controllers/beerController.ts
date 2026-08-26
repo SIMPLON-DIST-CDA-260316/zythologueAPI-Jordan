@@ -1,8 +1,9 @@
 import type { Request, Response } from "express";
-import {
-  createBeerSchema,
-  getBeersQuerySchema,
-  patchBeerSchema,
+import type {
+  BeerIdParam,
+  CreateBeerInput,
+  GetBeersQuery,
+  PatchBeerInput,
 } from "../schemas/beerSchema.ts";
 import type { BeerService } from "../services/beerService.ts";
 
@@ -13,35 +14,18 @@ export class BeerController {
     this.beerService = beerService;
   }
 
-  private parseBeerId(req: Request, res: Response): number | null {
-    const beerId = Number(req.params.id);
-    if (isNaN(beerId) || !Number.isInteger(beerId) || beerId <= 0) {
-      res.status(400).json({ message: `L'identifiant n'est pas conforme` });
-      return null;
-    }
-    return beerId;
-  }
-
-  getAll = async (req: Request, res: Response): Promise<void> => {
-    const parsed = getBeersQuerySchema.safeParse(req.query);
-    if (!parsed.success) {
-      res.status(400).json({
-        message: "Paramètres de requête invalides",
-        errors: parsed.error.flatten(),
-      });
-      return;
-    }
+  getAll = async (_req: Request, res: Response): Promise<void> => {
+    const query = res.locals.query as GetBeersQuery;
     try {
-      const result = await this.beerService.getAll(parsed.data);
+      const result = await this.beerService.getAll(query);
       res.status(200).json(result);
     } catch (err) {
       res.status(500).json({ message: (err as Error).message });
     }
   };
 
-  getOneById = async (req: Request, res: Response): Promise<void> => {
-    const beerId = this.parseBeerId(req, res);
-    if (beerId === null) return;
+  getOneById = async (_req: Request, res: Response): Promise<void> => {
+    const { id: beerId } = res.locals.params as BeerIdParam;
     try {
       const beer = await this.beerService.getOneById(beerId);
       if (!beer) {
@@ -54,9 +38,8 @@ export class BeerController {
     }
   };
 
-  deleteOneById = async (req: Request, res: Response): Promise<void> => {
-    const beerId = this.parseBeerId(req, res);
-    if (beerId === null) return;
+  deleteOneById = async (_req: Request, res: Response): Promise<void> => {
+    const { id: beerId } = res.locals.params as BeerIdParam;
     try {
       const deletedBeer = await this.beerService.deleteOneById(beerId);
       if (!deletedBeer) {
@@ -69,18 +52,12 @@ export class BeerController {
     }
   };
 
-  addOne = async (req: Request, res: Response): Promise<void> => {
-    const parsed = createBeerSchema.safeParse(req.body);
-    if (!parsed.success) {
-      res
-        .status(400)
-        .json({ message: "Données invalides", errors: parsed.error.flatten() });
-      return;
-    }
+  addOne = async (_req: Request, res: Response): Promise<void> => {
+    const body = res.locals.body as CreateBeerInput;
     try {
-      const addedBeer = await this.beerService.addOne(parsed.data);
+      const addedBeer = await this.beerService.addOne(body);
       if (addedBeer === "BREWERY_NOT_FOUND") {
-        res.status(404).json({ message: `Brasserie non trouvée` });
+        res.status(200).json({ message: `Brasserie non trouvée` });
         return;
       }
       if (addedBeer === "NAME_ALREADY_EXISTS") {
@@ -93,23 +70,12 @@ export class BeerController {
     }
   };
 
-  updateOneById = async (req: Request, res: Response): Promise<void> => {
-    const beerId = this.parseBeerId(req, res);
-    if (beerId === null) return;
-
-    const parsed = patchBeerSchema.safeParse(req.body);
-    if (!parsed.success) {
-      res
-        .status(400)
-        .json({ message: "Données invalides", errors: parsed.error.flatten() });
-      return;
-    }
+  updateOneById = async (_req: Request, res: Response): Promise<void> => {
+    const { id: beerId } = res.locals.params as BeerIdParam;
+    const body = res.locals.body as PatchBeerInput;
 
     try {
-      const updatedBeer = await this.beerService.updateOneById(
-        beerId,
-        parsed.data,
-      );
+      const updatedBeer = await this.beerService.updateOneById(beerId, body);
       switch (updatedBeer) {
         case "BEER_NOT_FOUND":
           res.status(404).json({ message: `Bière non trouvée` });
