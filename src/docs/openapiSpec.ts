@@ -140,7 +140,7 @@ export const openapiSpec = {
     description:
       "API REST de gestion de bières, développée dans le cadre du brief \"Zythologue\" (conception et implémentation d'une API CRUD).",
   },
-  servers: [{ url: "/api" }],
+  servers: [{ url: "/api/v1" }],
   components: {
     schemas: {
       Beer: beerSchema,

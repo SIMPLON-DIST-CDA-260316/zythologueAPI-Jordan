@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { BeerLogController } from "../controllers/beerLogController.ts";
-import { pool } from "../db.ts";
-import { BeerLogRepository } from "../repositories/beerLogRepository.ts";
-import { BeerLogService } from "../services/beerLogService.ts";
+import { BeerLogController } from "../../controllers/beerLogController.ts";
+import { pool } from "../../db.ts";
+import { BeerLogRepository } from "../../repositories/beerLogRepository.ts";
+import { BeerLogService } from "../../services/beerLogService.ts";
 
 const beerLogRepository = new BeerLogRepository(pool);
 const beerLogService = new BeerLogService(beerLogRepository);

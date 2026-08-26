@@ -1,15 +1,15 @@
 import { Router } from "express";
-import { BeerController } from "../controllers/beerController.ts";
-import { pool } from "../db.ts";
-import { validate } from "../middlewares/validate.ts";
-import { BeerRepository } from "../repositories/beerRepository.ts";
+import { BeerController } from "../../controllers/beerController.ts";
+import { pool } from "../../db.ts";
+import { validate } from "../../middlewares/validate.ts";
+import { BeerRepository } from "../../repositories/beerRepository.ts";
 import {
   beerIdParamSchema,
   createBeerSchema,
   getBeersQuerySchema,
   patchBeerSchema,
-} from "../schemas/beerSchema.ts";
-import { BeerService } from "../services/beerService.ts";
+} from "../../schemas/beerSchema.ts";
+import { BeerService } from "../../services/beerService.ts";
 
 const beerRepository = new BeerRepository(pool);
 const beerService = new BeerService(beerRepository);

@@ -35,7 +35,7 @@ Chaque route suit la même chaîne de responsabilité :
    npm run db:seed
    ```
 
-L'API est alors disponible sur `http://localhost:3000/api/beers` (port configurable via la variable d'environnement `PORT`).
+L'API est alors disponible sur `http://localhost:3000/api/v1/beers` (port configurable via la variable d'environnement `PORT`).
 
 Une documentation interactive (Swagger UI) est disponible sur `http://localhost:3000/api-docs` : elle permet de consulter chaque endpoint et de l'exécuter directement contre l'API réelle ("Try it out").
 
@@ -73,7 +73,7 @@ En cas d'erreur serveur inattendue (code `500`), la réponse a la forme `{ "mess
 
 ## Endpoints
 
-### GET /api/beers
+### GET /api/v1/beers
 
 Récupère une liste paginée de bières, avec filtrage et tri optionnels.
 
@@ -88,7 +88,7 @@ Récupère une liste paginée de bières, avec filtrage et tri optionnels.
 | `page` | number | entier positif | `1` | Numéro de page |
 | `limit` | number | entier positif, max 100 | `5` | Nombre de résultats par page |
 
-**Exemple** : `GET /api/beers?breweryId=2&sortBy=price&order=desc&page=1&limit=5`
+**Exemple** : `GET /api/v1/beers?breweryId=2&sortBy=price&order=desc&page=1&limit=5`
 
 **Réponses**
 
@@ -111,7 +111,7 @@ Récupère une liste paginée de bières, avec filtrage et tri optionnels.
 
 ---
 
-### GET /api/beers/:id
+### GET /api/v1/beers/:id
 
 Récupère une bière par son identifiant.
 
@@ -131,7 +131,7 @@ Récupère une bière par son identifiant.
 
 ---
 
-### POST /api/beers
+### POST /api/v1/beers
 
 Crée une nouvelle bière.
 
@@ -170,7 +170,7 @@ Crée une nouvelle bière.
 
 ---
 
-### PATCH /api/beers/:id
+### PATCH /api/v1/beers/:id
 
 Modifie partiellement une bière existante. Seuls les champs envoyés dans le body sont modifiés ; les autres conservent leur valeur actuelle.
 
@@ -213,7 +213,7 @@ Modifie partiellement une bière existante. Seuls les champs envoyés dans le bo
 
 ---
 
-### DELETE /api/beers/:id
+### DELETE /api/v1/beers/:id
 
 Supprime une bière par son identifiant.
 
