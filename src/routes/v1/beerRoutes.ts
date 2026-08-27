@@ -10,6 +10,7 @@ import {
   patchBeerSchema,
 } from "../../schemas/beerSchema.ts";
 import { BeerService } from "../../services/beerService.ts";
+import beerPhotoRoutes from "./beerPhotoRoutes.ts";
 
 const beerRepository = new BeerRepository(pool);
 const beerService = new BeerService(beerRepository);
@@ -44,5 +45,8 @@ router.patch(
   validate(patchBeerSchema, "body"),
   beerController.updateOneById,
 );
+
+// Sous-ressource : photos d'une bière
+router.use("/:id/photos", beerPhotoRoutes);
 
 export default router;

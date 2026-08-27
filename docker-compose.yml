@@ -9,6 +9,7 @@ services:
     volumes:
       - ./src:/app/src
       - ./scripts:/app/scripts
+      - ./uploads:/app/uploads
     depends_on:
       db:
         condition: service_healthy

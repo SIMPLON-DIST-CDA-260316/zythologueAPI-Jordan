@@ -75,6 +75,46 @@ const beerLogExample = {
   loggedBy: "zythologue",
 };
 
+const beerPhotoSchema = {
+  type: "object",
+  properties: {
+    id: { type: "integer", description: "Identifiant unique de la photo" },
+    url: {
+      type: "string",
+      description:
+        "Chemin de l'image principale (WebP, 1200 px max). Peut aussi être une URL externe pour les photos importées.",
+    },
+    thumbnailUrl: {
+      type: "string",
+      description:
+        "Chemin de la vignette (WebP, 320 x 320). Vaut url si aucune vignette n'a été générée.",
+    },
+    width: {
+      type: "integer",
+      nullable: true,
+      description: "Largeur de l'image finale en px (null si non générée par l'API)",
+    },
+    height: {
+      type: "integer",
+      nullable: true,
+      description: "Hauteur de l'image finale en px (null si non générée par l'API)",
+    },
+    createdAt: { type: "string", format: "date-time" },
+    beerId: { type: "integer", description: "Bière à laquelle la photo est rattachée" },
+  },
+};
+
+const beerPhotoExample = {
+  id: 21,
+  url: "/uploads/beers/3f2a9c1e-8b4d-4e6f-9a2b-7c5d1e0f8a3b.webp",
+  thumbnailUrl:
+    "/uploads/beers/thumbs/3f2a9c1e-8b4d-4e6f-9a2b-7c5d1e0f8a3b.webp",
+  width: 1200,
+  height: 800,
+  createdAt: "2026-08-27T12:34:56.000Z",
+  beerId: 1,
+};
+
 const errorSchema = {
   type: "object",
   properties: {
@@ -145,6 +185,7 @@ export const openapiSpec = {
     schemas: {
       Beer: beerSchema,
       BeerLog: beerLogSchema,
+      BeerPhoto: beerPhotoSchema,
       Error: errorSchema,
     },
   },
@@ -381,6 +422,136 @@ export const openapiSpec = {
           "204": { description: "Bière supprimée" },
           "400": idInvalidResponse,
           "404": beerNotFoundResponse,
+        },
+      },
+    },
+    "/beers/{id}/photos": {
+      get: {
+        summary: "Liste les photos d'une bière, par ordre chronologique",
+        parameters: [idParam],
+        responses: {
+          "200": {
+            description: "Succès (tableau éventuellement vide)",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "array",
+                  items: { $ref: "#/components/schemas/BeerPhoto" },
+                },
+                example: [beerPhotoExample],
+              },
+            },
+          },
+          "400": idInvalidResponse,
+          "404": beerNotFoundResponse,
+        },
+      },
+      post: {
+        summary: "Envoie une photo pour une bière",
+        description:
+          "Le fichier est reçu en mémoire par Multer (5 Mo max), puis décodé par Sharp : un fichier qui n'est pas réellement une image est rejeté, quel que soit son nom ou son Content-Type déclaré. L'image acceptée est ré-encodée en WebP en deux variantes (1200 px et vignette 320 x 320), ses métadonnées EXIF sont supprimées et son nom est régénéré côté serveur.",
+        parameters: [idParam],
+        requestBody: {
+          required: true,
+          content: {
+            "multipart/form-data": {
+              schema: {
+                type: "object",
+                properties: {
+                  photo: {
+                    type: "string",
+                    format: "binary",
+                    description: "Fichier JPEG, PNG, WebP ou AVIF (5 Mo maximum)",
+                  },
+                },
+                required: ["photo"],
+              },
+            },
+          },
+        },
+        responses: {
+          "201": {
+            description: "Photo enregistrée",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/BeerPhoto" },
+                example: beerPhotoExample,
+              },
+            },
+          },
+          "400": {
+            description:
+              "Identifiant non conforme, aucun fichier reçu, fichier qui n'est pas une image, ou dimensions hors bornes",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: { message: "Le fichier envoyé n'est pas une image valide" },
+              },
+            },
+          },
+          "404": beerNotFoundResponse,
+          "409": {
+            description: "La bière a atteint le nombre maximum de photos (10)",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: {
+                  message: "Cette bière a déjà le nombre maximum de photos",
+                },
+              },
+            },
+          },
+          "413": {
+            description: "Fichier au-delà de la limite de taille",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: { message: "Fichier trop volumineux (5 Mo maximum)" },
+              },
+            },
+          },
+          "415": {
+            description: "Format d'image non supporté",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: {
+                  message:
+                    "Format d'image non supporté (JPEG, PNG, WebP ou AVIF attendu)",
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/beers/{id}/photos/{photoId}": {
+      delete: {
+        summary: "Supprime une photo d'une bière",
+        description:
+          "Supprime la ligne puis, uniquement si l'URL est une URL générée par l'API, les fichiers correspondants sur disque. Une photo pointant vers une URL externe est retirée de la base sans suppression de fichier.",
+        parameters: [
+          idParam,
+          {
+            name: "photoId",
+            in: "path",
+            required: true,
+            description: "Identifiant de la photo (entier positif)",
+            schema: { type: "integer", minimum: 1 },
+          },
+        ],
+        responses: {
+          "204": { description: "Photo supprimée" },
+          "400": idInvalidResponse,
+          "404": {
+            description: "Aucune photo avec cet id pour cette bière",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: { message: "Photo non trouvée" },
+              },
+            },
+          },
         },
       },
     },
