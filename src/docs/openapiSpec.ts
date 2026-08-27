@@ -115,6 +115,37 @@ const beerPhotoExample = {
   beerId: 1,
 };
 
+const brewerySchema = {
+  type: "object",
+  properties: {
+    id: { type: "integer", description: "Identifiant unique de la brasserie" },
+    name: { type: "string", description: "Nom de la brasserie (unique)" },
+    description: { type: "string", description: "Description libre (obligatoire)" },
+    country: { type: "string", description: "Pays de la brasserie" },
+    city: { type: "string", description: "Ville de la brasserie" },
+    website: {
+      type: "string",
+      format: "uri",
+      nullable: true,
+      description: "Site web de la brasserie",
+    },
+    beerCount: {
+      type: "integer",
+      description: "Nombre de bières rattachées à cette brasserie",
+    },
+  },
+};
+
+const breweryExample = {
+  id: 2,
+  name: "Brasserie d'Achouffe",
+  description: "Brasserie ardennaise fondée en 1982",
+  country: "Belgique",
+  city: "Achouffe",
+  website: "https://www.achouffe.be",
+  beerCount: 4,
+};
+
 const breweryPhotoSchema = {
   type: "object",
   properties: {
@@ -223,6 +254,16 @@ const nameConflictResponse = {
   },
 };
 
+const breweryNameConflictResponse = {
+  description: "Une brasserie avec ce name existe déjà",
+  content: {
+    "application/json": {
+      schema: { $ref: "#/components/schemas/Error" },
+      example: { message: "Une brasserie de ce nom existe déjà" },
+    },
+  },
+};
+
 export const openapiSpec = {
   openapi: "3.0.3",
   info: {
@@ -237,6 +278,7 @@ export const openapiSpec = {
       Beer: beerSchema,
       BeerLog: beerLogSchema,
       BeerPhoto: beerPhotoSchema,
+      Brewery: brewerySchema,
       BreweryPhoto: breweryPhotoSchema,
       Error: errorSchema,
     },
@@ -604,6 +646,236 @@ export const openapiSpec = {
               },
             },
           },
+        },
+      },
+    },
+    "/breweries": {
+      get: {
+        summary: "Liste paginée de brasseries, avec filtrage et tri optionnels",
+        parameters: [
+          {
+            name: "country",
+            in: "query",
+            description: "Filtre sur le pays (correspondance exacte)",
+            schema: { type: "string" },
+          },
+          {
+            name: "city",
+            in: "query",
+            description: "Filtre sur la ville (correspondance exacte)",
+            schema: { type: "string" },
+          },
+          {
+            name: "name",
+            in: "query",
+            description:
+              "Recherche partielle sur le nom, insensible à la casse",
+            schema: { type: "string" },
+          },
+          {
+            name: "sortBy",
+            in: "query",
+            description: "Champ de tri (défaut : tri par id)",
+            schema: { type: "string", enum: ["name"] },
+          },
+          {
+            name: "order",
+            in: "query",
+            description: "Sens du tri",
+            schema: { type: "string", enum: ["asc", "desc"], default: "asc" },
+          },
+          {
+            name: "page",
+            in: "query",
+            description: "Numéro de page",
+            schema: { type: "integer", minimum: 1, default: 1 },
+          },
+          {
+            name: "limit",
+            in: "query",
+            description: "Nombre de résultats par page (max 100)",
+            schema: { type: "integer", minimum: 1, maximum: 100, default: 5 },
+          },
+        ],
+        responses: {
+          "200": {
+            description: "Succès",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    data: {
+                      type: "array",
+                      items: { $ref: "#/components/schemas/Brewery" },
+                    },
+                    page: { type: "integer" },
+                    limit: { type: "integer" },
+                    total: { type: "integer" },
+                    totalPages: { type: "integer" },
+                  },
+                },
+                example: {
+                  data: [breweryExample],
+                  page: 1,
+                  limit: 5,
+                  total: 21,
+                  totalPages: 5,
+                },
+              },
+            },
+          },
+          "400": {
+            description: "Query param invalide ou clé inconnue",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: {
+                  message: "Paramètres de requête invalides",
+                  errors: {},
+                },
+              },
+            },
+          },
+        },
+      },
+      post: {
+        summary: "Crée une nouvelle brasserie",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  name: {
+                    type: "string",
+                    maxLength: 255,
+                    description:
+                      "Non vide (après trim), doit être unique en base",
+                  },
+                  description: {
+                    type: "string",
+                    description: "Non vide (après trim), obligatoire",
+                  },
+                  country: { type: "string", maxLength: 100 },
+                  city: { type: "string", maxLength: 100 },
+                  website: {
+                    type: "string",
+                    format: "uri",
+                    nullable: true,
+                    description: "URL valide si fourni, null accepté",
+                  },
+                },
+                required: ["name", "description", "country", "city"],
+              },
+              example: {
+                name: "Brasserie d'Achouffe",
+                description: "Brasserie ardennaise fondée en 1982",
+                country: "Belgique",
+                city: "Achouffe",
+                website: "https://www.achouffe.be",
+              },
+            },
+          },
+        },
+        responses: {
+          "201": {
+            description: "Brasserie créée (beerCount vaut 0)",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Brewery" },
+                example: { ...breweryExample, beerCount: 0 },
+              },
+            },
+          },
+          "400": {
+            description: "Body invalide (champ manquant, type incorrect)",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: { message: "Données invalides", errors: {} },
+              },
+            },
+          },
+          "409": breweryNameConflictResponse,
+        },
+      },
+    },
+    "/breweries/{id}": {
+      get: {
+        summary: "Récupère une brasserie par son identifiant",
+        parameters: [breweryIdParam],
+        responses: {
+          "200": {
+            description: "Brasserie trouvée",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Brewery" },
+                example: breweryExample,
+              },
+            },
+          },
+          "400": idInvalidResponse,
+          "404": breweryNotFoundResponse,
+        },
+      },
+      patch: {
+        summary:
+          "Modifie partiellement une brasserie existante (seuls les champs envoyés sont modifiés)",
+        parameters: [breweryIdParam],
+        requestBody: {
+          required: true,
+          description:
+            "Tous les champs sont optionnels, mais au moins un doit être fourni. website accepte null pour effacer la valeur.",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  name: { type: "string", maxLength: 255 },
+                  description: { type: "string" },
+                  country: { type: "string", maxLength: 100 },
+                  city: { type: "string", maxLength: 100 },
+                  website: { type: "string", format: "uri", nullable: true },
+                },
+              },
+              example: { city: "Houffalize" },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Brasserie mise à jour",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Brewery" },
+                example: breweryExample,
+              },
+            },
+          },
+          "400": {
+            description: "id non conforme, ou body vide/invalide",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: { message: "Aucun champ à modifier" },
+              },
+            },
+          },
+          "404": breweryNotFoundResponse,
+          "409": breweryNameConflictResponse,
+        },
+      },
+      delete: {
+        summary: "Supprime une brasserie par son identifiant",
+        description:
+          "Suppression en cascade : les bières de la brasserie, leurs photos, ainsi que les photos, avis et favoris de la brasserie sont supprimés avec elle. Les fichiers image correspondants sont effacés du disque.",
+        parameters: [breweryIdParam],
+        responses: {
+          "204": { description: "Brasserie supprimée" },
+          "400": idInvalidResponse,
+          "404": breweryNotFoundResponse,
         },
       },
     },

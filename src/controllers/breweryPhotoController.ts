@@ -1,8 +1,6 @@
 import type { Request, Response } from "express";
-import type {
-  BreweryIdParam,
-  BreweryPhotoParams,
-} from "../schemas/breweryPhotoSchema.ts";
+import type { BreweryPhotoParams } from "../schemas/breweryPhotoSchema.ts";
+import type { BreweryIdParam } from "../schemas/brewerySchema.ts";
 import type { BreweryPhotoService } from "../services/breweryPhotoService.ts";
 
 export class BreweryPhotoController {

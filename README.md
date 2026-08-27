@@ -230,3 +230,188 @@ Supprime une bière par son identifiant.
 | 204 | Bière supprimée | (vide) |
 | 400 | `id` non conforme | `{ "message": "L'identifiant n'est pas conforme" }` |
 | 404 | Aucune bière avec cet id | `{ "message": "Bière non trouvée" }` |
+
+---
+
+## Ressource `Brewery`
+
+Exemple de représentation JSON d'une brasserie telle que renvoyée par l'API :
+
+```json
+{
+  "id": 2,
+  "name": "Brasserie d'Achouffe",
+  "description": "Brasserie ardennaise fondée en 1982",
+  "country": "Belgique",
+  "city": "Achouffe",
+  "website": "https://www.achouffe.be",
+  "beerCount": 4
+}
+```
+
+| Champ         | Type            | Description                                     |
+|---------------|-----------------|-------------------------------------------------|
+| `id`          | number          | Identifiant unique de la brasserie              |
+| `name`        | string          | Nom de la brasserie (unique)                    |
+| `description` | string          | Description libre (obligatoire)                 |
+| `country`     | string          | Pays de la brasserie                            |
+| `city`        | string          | Ville de la brasserie                           |
+| `website`     | string \| null  | Site web de la brasserie                        |
+| `beerCount`   | number          | Nombre de bières rattachées à cette brasserie   |
+
+---
+
+### GET /api/v1/breweries
+
+Récupère une liste paginée de brasseries, avec filtrage et tri optionnels.
+
+**Query params** (tous optionnels, toute clé non listée ci-dessous est rejetée en 400)
+
+| Nom | Type | Valeurs acceptées | Défaut | Description |
+|---|---|---|---|---|
+| `country` | string | non vide | — | Filtre sur le pays (correspondance exacte) |
+| `city` | string | non vide | — | Filtre sur la ville (correspondance exacte) |
+| `name` | string | non vide | — | Recherche partielle sur le nom, insensible à la casse |
+| `sortBy` | string | `name` | tri par `id` | Champ de tri |
+| `order` | string | `asc` \| `desc` | `asc` | Sens du tri |
+| `page` | number | entier positif | `1` | Numéro de page |
+| `limit` | number | entier positif, max 100 | `5` | Nombre de résultats par page |
+
+**Exemple** : `GET /api/v1/breweries?country=Belgique&name=chou&sortBy=name&order=asc&page=1&limit=5`
+
+**Réponses**
+
+| Code | Cas | Corps |
+|---|---|---|
+| 200 | Succès | `{ data, page, limit, total, totalPages }` |
+| 400 | Query param invalide ou clé inconnue | `{ "message": "Paramètres de requête invalides", "errors": {...} }` |
+
+```json
+{
+  "data": [
+    { "id": 2, "name": "Brasserie d'Achouffe", "description": "Brasserie ardennaise fondée en 1982", "country": "Belgique", "city": "Achouffe", "website": "https://www.achouffe.be", "beerCount": 4 }
+  ],
+  "page": 1,
+  "limit": 5,
+  "total": 21,
+  "totalPages": 5
+}
+```
+
+---
+
+### GET /api/v1/breweries/:id
+
+Récupère une brasserie par son identifiant.
+
+**Paramètres d'URL**
+
+| Nom | Type | Règle |
+|---|---|---|
+| `id` | number | Entier positif |
+
+**Réponses**
+
+| Code | Cas | Corps |
+|---|---|---|
+| 200 | Brasserie trouvée | Objet brasserie |
+| 400 | `id` non conforme (non numérique, non entier ou ≤ 0) | `{ "message": "L'identifiant n'est pas conforme" }` |
+| 404 | Aucune brasserie avec cet id | `{ "message": "Brasserie non trouvée" }` |
+
+---
+
+### POST /api/v1/breweries
+
+Crée une nouvelle brasserie.
+
+**Body attendu**
+
+| Champ | Type | Obligatoire | Règles de validation |
+|---|---|---|---|
+| `name` | string | oui | non vide (après trim), 255 caractères max, doit être unique en base |
+| `description` | string | oui | non vide (après trim) |
+| `country` | string | oui | non vide (après trim), 100 caractères max |
+| `city` | string | oui | non vide (après trim), 100 caractères max |
+| `website` | string \| null | non | URL valide (2048 caractères max) si fourni, `null` accepté |
+
+**Exemple de requête**
+
+```json
+{
+  "name": "Brasserie d'Achouffe",
+  "description": "Brasserie ardennaise fondée en 1982",
+  "country": "Belgique",
+  "city": "Achouffe",
+  "website": "https://www.achouffe.be"
+}
+```
+
+**Réponses**
+
+| Code | Cas | Corps |
+|---|---|---|
+| 201 | Brasserie créée | Objet brasserie créé (`beerCount` vaut `0`) |
+| 400 | Body invalide (champ manquant, type incorrect, `website` mal formée) | `{ "message": "Données invalides", "errors": {...} }` |
+| 409 | Une brasserie avec ce `name` existe déjà | `{ "message": "Une brasserie de ce nom existe déjà" }` |
+
+---
+
+### PATCH /api/v1/breweries/:id
+
+Modifie partiellement une brasserie existante. Seuls les champs envoyés dans le body sont modifiés ; les autres conservent leur valeur actuelle.
+
+**Paramètres d'URL**
+
+| Nom | Type | Règle |
+|---|---|---|
+| `id` | number | Entier positif |
+
+**Body attendu** (tous les champs sont optionnels, mais au moins un doit être fourni)
+
+| Champ | Type | Règles de validation |
+|---|---|---|
+| `name` | string | non vide (après trim), 255 caractères max, doit être unique en base |
+| `description` | string | non vide (après trim) |
+| `country` | string | non vide (après trim), 100 caractères max |
+| `city` | string | non vide (après trim), 100 caractères max |
+| `website` | string \| null | URL valide si fourni, `null` accepté (efface le site web) |
+
+**Exemple de requête** (modification de la ville uniquement)
+
+```json
+{
+  "city": "Houffalize"
+}
+```
+
+**Réponses**
+
+| Code | Cas | Corps |
+|---|---|---|
+| 200 | Brasserie mise à jour | Objet brasserie mis à jour |
+| 400 | `id` non conforme | `{ "message": "L'identifiant n'est pas conforme" }` |
+| 400 | Body vide ou invalide | `{ "message": "Données invalides", "errors": {...} }` ou `{ "message": "Aucun champ à modifier" }` |
+| 404 | Brasserie non trouvée | `{ "message": "Brasserie non trouvée" }` |
+| 409 | Une autre brasserie porte déjà le nouveau `name` | `{ "message": "Une brasserie de ce nom existe déjà" }` |
+
+---
+
+### DELETE /api/v1/breweries/:id
+
+Supprime une brasserie par son identifiant.
+
+> ⚠️ **Suppression en cascade.** Les bières de la brasserie, leurs photos, ainsi que les photos, avis et favoris de la brasserie sont supprimés avec elle (`ON DELETE CASCADE`). Les fichiers image correspondants sont effacés du disque.
+
+**Paramètres d'URL**
+
+| Nom | Type | Règle |
+|---|---|---|
+| `id` | number | Entier positif |
+
+**Réponses**
+
+| Code | Cas | Corps |
+|---|---|---|
+| 204 | Brasserie supprimée | (vide) |
+| 400 | `id` non conforme | `{ "message": "L'identifiant n'est pas conforme" }` |
+| 404 | Aucune brasserie avec cet id | `{ "message": "Brasserie non trouvée" }` |

@@ -4,10 +4,8 @@ import { pool } from "../../db.ts";
 import { uploadPhoto } from "../../middlewares/upload.ts";
 import { validate } from "../../middlewares/validate.ts";
 import { BreweryPhotoRepository } from "../../repositories/breweryPhotoRepository.ts";
-import {
-  breweryIdParamSchema,
-  breweryPhotoParamsSchema,
-} from "../../schemas/breweryPhotoSchema.ts";
+import { breweryPhotoParamsSchema } from "../../schemas/breweryPhotoSchema.ts";
+import { breweryIdParamSchema } from "../../schemas/brewerySchema.ts";
 import { BreweryPhotoService } from "../../services/breweryPhotoService.ts";
 
 const breweryPhotoRepository = new BreweryPhotoRepository(pool);

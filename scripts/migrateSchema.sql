@@ -73,6 +73,11 @@ CREATE TABLE IF NOT EXISTS beer (
                         REFERENCES brewery(id) ON DELETE CASCADE
 );
 
+-- Le côté enfant de beer.brewery_id n'est pas indexé automatiquement : cet index
+-- sert le filtre ?breweryId= des bières, l'agrégat beerCount des brasseries et
+-- le ON DELETE CASCADE depuis brewery.
+CREATE INDEX IF NOT EXISTS idx_beer_brewery_id ON beer(brewery_id);
+
 -- ============================================================
 -- Journalisation des insertions de bières
 -- ============================================================
