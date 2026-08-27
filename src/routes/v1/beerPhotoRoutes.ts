@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { BeerPhotoController } from "../../controllers/beerPhotoController.ts";
 import { pool } from "../../db.ts";
-import { uploadBeerPhoto } from "../../middlewares/upload.ts";
+import { uploadPhoto } from "../../middlewares/upload.ts";
 import { validate } from "../../middlewares/validate.ts";
 import { BeerPhotoRepository } from "../../repositories/beerPhotoRepository.ts";
 import { beerPhotoParamsSchema } from "../../schemas/beerPhotoSchema.ts";
@@ -23,12 +23,12 @@ router.get(
 );
 
 // Route pour uploader une photo de bière.
-// L'ordre est un choix de sécurité : validate AVANT uploadBeerPhoto, pour qu'un
+// L'ordre est un choix de sécurité : validate AVANT uploadPhoto, pour qu'un
 // :id malformé soit rejeté avant d'avoir bufferisé 5 Mo en mémoire.
 router.post(
   "/",
   validate(beerIdParamSchema, "params"),
-  uploadBeerPhoto,
+  uploadPhoto,
   beerPhotoController.addOne,
 );
 

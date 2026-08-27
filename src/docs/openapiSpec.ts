@@ -115,6 +115,57 @@ const beerPhotoExample = {
   beerId: 1,
 };
 
+const breweryPhotoSchema = {
+  type: "object",
+  properties: {
+    id: { type: "integer", description: "Identifiant unique de la photo" },
+    url: {
+      type: "string",
+      description:
+        "Chemin de l'image principale (WebP, 1200 px max). Peut aussi être une URL externe pour les photos importées.",
+    },
+    thumbnailUrl: {
+      type: "string",
+      description:
+        "Chemin de la vignette (WebP, 320 x 320). Vaut url si aucune vignette n'a été générée.",
+    },
+    width: {
+      type: "integer",
+      nullable: true,
+      description: "Largeur de l'image finale en px (null si non générée par l'API)",
+    },
+    height: {
+      type: "integer",
+      nullable: true,
+      description: "Hauteur de l'image finale en px (null si non générée par l'API)",
+    },
+    createdAt: { type: "string", format: "date-time" },
+    breweryId: {
+      type: "integer",
+      description: "Brasserie à laquelle la photo est rattachée",
+    },
+  },
+};
+
+const breweryPhotoExample = {
+  id: 13,
+  url: "/uploads/breweries/5c1d7e93-2a48-4b16-8f0c-6d9a3b7e2f41.webp",
+  thumbnailUrl:
+    "/uploads/breweries/thumbs/5c1d7e93-2a48-4b16-8f0c-6d9a3b7e2f41.webp",
+  width: 1200,
+  height: 800,
+  createdAt: "2026-08-27T12:34:56.000Z",
+  breweryId: 1,
+};
+
+const breweryIdParam = {
+  name: "id",
+  in: "path",
+  required: true,
+  description: "Identifiant de la brasserie (entier positif)",
+  schema: { type: "integer", minimum: 1 },
+};
+
 const errorSchema = {
   type: "object",
   properties: {
@@ -186,6 +237,7 @@ export const openapiSpec = {
       Beer: beerSchema,
       BeerLog: beerLogSchema,
       BeerPhoto: beerPhotoSchema,
+      BreweryPhoto: breweryPhotoSchema,
       Error: errorSchema,
     },
   },
@@ -545,6 +597,136 @@ export const openapiSpec = {
           "400": idInvalidResponse,
           "404": {
             description: "Aucune photo avec cet id pour cette bière",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: { message: "Photo non trouvée" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/breweries/{id}/photos": {
+      get: {
+        summary: "Liste les photos d'une brasserie, par ordre chronologique",
+        parameters: [breweryIdParam],
+        responses: {
+          "200": {
+            description: "Succès (tableau éventuellement vide)",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "array",
+                  items: { $ref: "#/components/schemas/BreweryPhoto" },
+                },
+                example: [breweryPhotoExample],
+              },
+            },
+          },
+          "400": idInvalidResponse,
+          "404": breweryNotFoundResponse,
+        },
+      },
+      post: {
+        summary: "Envoie une photo pour une brasserie",
+        description:
+          "Même pipeline que les photos de bières : Multer reçoit le fichier en mémoire (5 Mo max), Sharp le décode pour vérifier qu'il s'agit réellement d'une image, puis le ré-encode en WebP en deux variantes (1200 px et vignette 320 x 320). Les métadonnées EXIF sont supprimées et le nom est régénéré côté serveur.",
+        parameters: [breweryIdParam],
+        requestBody: {
+          required: true,
+          content: {
+            "multipart/form-data": {
+              schema: {
+                type: "object",
+                properties: {
+                  photo: {
+                    type: "string",
+                    format: "binary",
+                    description: "Fichier JPEG, PNG, WebP ou AVIF (5 Mo maximum)",
+                  },
+                },
+                required: ["photo"],
+              },
+            },
+          },
+        },
+        responses: {
+          "201": {
+            description: "Photo enregistrée",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/BreweryPhoto" },
+                example: breweryPhotoExample,
+              },
+            },
+          },
+          "400": {
+            description:
+              "Identifiant non conforme, aucun fichier reçu, fichier qui n'est pas une image, ou dimensions hors bornes",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: { message: "Le fichier envoyé n'est pas une image valide" },
+              },
+            },
+          },
+          "404": breweryNotFoundResponse,
+          "409": {
+            description: "La brasserie a atteint le nombre maximum de photos (10)",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: {
+                  message: "Cette brasserie a déjà le nombre maximum de photos",
+                },
+              },
+            },
+          },
+          "413": {
+            description: "Fichier au-delà de la limite de taille",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: { message: "Fichier trop volumineux (5 Mo maximum)" },
+              },
+            },
+          },
+          "415": {
+            description: "Format d'image non supporté",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: {
+                  message:
+                    "Format d'image non supporté (JPEG, PNG, WebP ou AVIF attendu)",
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/breweries/{id}/photos/{photoId}": {
+      delete: {
+        summary: "Supprime une photo d'une brasserie",
+        description:
+          "Supprime la ligne puis, uniquement si l'URL est une URL générée par l'API, les fichiers correspondants sur disque. Une photo pointant vers une URL externe est retirée de la base sans suppression de fichier.",
+        parameters: [
+          breweryIdParam,
+          {
+            name: "photoId",
+            in: "path",
+            required: true,
+            description: "Identifiant de la photo (entier positif)",
+            schema: { type: "integer", minimum: 1 },
+          },
+        ],
+        responses: {
+          "204": { description: "Photo supprimée" },
+          "400": idInvalidResponse,
+          "404": {
+            description: "Aucune photo avec cet id pour cette brasserie",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/Error" },

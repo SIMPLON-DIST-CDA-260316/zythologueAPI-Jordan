@@ -6,13 +6,34 @@ import path from "node:path";
  */
 
 export const UPLOADS_ROOT = path.resolve(process.cwd(), "uploads");
-export const BEER_PHOTOS_DIR = path.join(UPLOADS_ROOT, "beers");
-export const BEER_THUMBS_DIR = path.join(BEER_PHOTOS_DIR, "thumbs");
 
 /** Préfixe public correspondant au montage express.static dans app.ts */
 export const UPLOADS_PUBLIC_PATH = "/uploads";
-export const BEER_PHOTOS_PUBLIC_PATH = `${UPLOADS_PUBLIC_PATH}/beers`;
-export const BEER_THUMBS_PUBLIC_PATH = `${BEER_PHOTOS_PUBLIC_PATH}/thumbs`;
+
+/**
+ * Destination d'une famille de photos : où écrire sur disque, et sous quels
+ * chemins publics les servir. Décrire une entité = ajouter une constante ici,
+ * imageService n'a pas besoin de savoir de quelle entité il s'agit.
+ */
+export interface PhotoTarget {
+  dir: string;
+  thumbsDir: string;
+  publicPath: string;
+  thumbsPublicPath: string;
+}
+
+const buildPhotoTarget = (segment: string): PhotoTarget => ({
+  dir: path.join(UPLOADS_ROOT, segment),
+  thumbsDir: path.join(UPLOADS_ROOT, segment, "thumbs"),
+  publicPath: `${UPLOADS_PUBLIC_PATH}/${segment}`,
+  thumbsPublicPath: `${UPLOADS_PUBLIC_PATH}/${segment}/thumbs`,
+});
+
+export const BEER_PHOTO_TARGET = buildPhotoTarget("beers");
+export const BREWERY_PHOTO_TARGET = buildPhotoTarget("breweries");
+
+/** Toutes les destinations connues : sert à créer l'arborescence au démarrage. */
+export const PHOTO_TARGETS = [BEER_PHOTO_TARGET, BREWERY_PHOTO_TARGET] as const;
 
 /** Taille maximale acceptée par Multer, avant tout décodage. */
 export const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 Mo
@@ -45,6 +66,7 @@ export const FULL_VARIANT = { width: 1200, height: 1200, quality: 80 } as const;
 export const THUMB_VARIANT = { width: 320, height: 320, quality: 70 } as const;
 
 export const MAX_PHOTOS_PER_BEER = 10;
+export const MAX_PHOTOS_PER_BREWERY = 10;
 
 /**
  * Motif des seuls chemins que l'API s'autorise à supprimer du disque.
@@ -53,4 +75,4 @@ export const MAX_PHOTOS_PER_BEER = 10;
  * primitive de suppression de fichier arbitraire.
  */
 export const MANAGED_UPLOAD_PATTERN =
-  /^\/uploads\/beers\/(thumbs\/)?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.webp$/;
+  /^\/uploads\/(beers|breweries)\/(thumbs\/)?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.webp$/;

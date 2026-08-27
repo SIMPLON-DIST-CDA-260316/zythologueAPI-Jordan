@@ -66,7 +66,7 @@ const mapMulterError = (
  * stack trace. On appelle donc Multer à la main (pattern documenté dans son
  * README) pour rester au format { message } utilisé par validate.ts.
  */
-export const uploadBeerPhoto = (
+export const uploadPhoto = (
   req: Request,
   res: Response,
   next: NextFunction,

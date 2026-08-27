@@ -4,18 +4,16 @@ import path from "node:path";
 import sharp, { type Metadata } from "sharp";
 import {
   ALLOWED_SHARP_FORMATS,
-  BEER_PHOTOS_DIR,
-  BEER_PHOTOS_PUBLIC_PATH,
-  BEER_THUMBS_DIR,
-  BEER_THUMBS_PUBLIC_PATH,
   FULL_VARIANT,
   MANAGED_UPLOAD_PATTERN,
   MAX_IMAGE_DIMENSION,
   MAX_INPUT_PIXELS,
   MIN_IMAGE_DIMENSION,
+  PHOTO_TARGETS,
   THUMB_VARIANT,
   UPLOADS_PUBLIC_PATH,
   UPLOADS_ROOT,
+  type PhotoTarget,
 } from "../config/upload.ts";
 
 export type ImageValidationError =
@@ -93,13 +91,14 @@ const assertInsideUploads = (filePath: string): void => {
  * Aucun keepMetadata() / withMetadata() / keepExif() : Sharp supprime les
  * métadonnées par défaut, ce qui efface au passage les coordonnées GPS.
  */
-export const generateBeerPhotoVariants = async (
+export const generatePhotoVariants = async (
   buffer: Buffer,
+  target: PhotoTarget,
 ): Promise<GeneratedImage> => {
   // Nom généré côté serveur : file.originalname n'est jamais utilisé.
   const filename = `${randomUUID()}.webp`;
-  const fullPath = path.join(BEER_PHOTOS_DIR, filename);
-  const thumbPath = path.join(BEER_THUMBS_DIR, filename);
+  const fullPath = path.join(target.dir, filename);
+  const thumbPath = path.join(target.thumbsDir, filename);
   assertInsideUploads(fullPath);
   assertInsideUploads(thumbPath);
 
@@ -130,8 +129,8 @@ export const generateBeerPhotoVariants = async (
   }
 
   return {
-    url: `${BEER_PHOTOS_PUBLIC_PATH}/${filename}`,
-    thumbnailUrl: `${BEER_THUMBS_PUBLIC_PATH}/${filename}`,
+    url: `${target.publicPath}/${filename}`,
+    thumbnailUrl: `${target.thumbsPublicPath}/${filename}`,
     // Dimensions de l'image FINALE, obtenues gratuitement via l'objet info.
     width: fullInfo.width,
     height: fullInfo.height,
@@ -160,5 +159,9 @@ export const removeManagedFile = async (url: string | null): Promise<void> => {
 
 /** Crée l'arborescence d'uploads au démarrage (recursive : crée aussi les parents). */
 export const ensureUploadDirectories = async (): Promise<void> => {
-  await fs.mkdir(BEER_THUMBS_DIR, { recursive: true });
+  await Promise.all(
+    PHOTO_TARGETS.map((target) =>
+      fs.mkdir(target.thumbsDir, { recursive: true }),
+    ),
+  );
 };
