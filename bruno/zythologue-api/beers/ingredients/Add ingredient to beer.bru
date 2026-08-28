@@ -1,0 +1,21 @@
+meta {
+  name: Add ingredient to beer
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/beers/:id/ingredients
+  body: json
+  auth: none
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "ingredientId": 1
+  }
+}

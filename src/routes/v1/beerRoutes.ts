@@ -11,6 +11,7 @@ import {
 } from "../../schemas/beerSchema.ts";
 import { BeerService } from "../../services/beerService.ts";
 import beerCategoryRoutes from "./beerCategoryRoutes.ts";
+import beerIngredientRoutes from "./beerIngredientRoutes.ts";
 import beerPhotoRoutes from "./beerPhotoRoutes.ts";
 
 const beerRepository = new BeerRepository(pool);
@@ -53,5 +54,9 @@ router.use("/:id/photos", beerPhotoRoutes);
 // Sous-ressource : catégories associées à une bière (écriture seulement — la
 // lecture passe par le champ categories embarqué dans GET /beers/:id)
 router.use("/:id/categories", beerCategoryRoutes);
+
+// Sous-ressource : ingrédients associés à une bière (écriture seulement — la
+// lecture passe par le champ ingredients embarqué dans GET /beers/:id)
+router.use("/:id/ingredients", beerIngredientRoutes);
 
 export default router;

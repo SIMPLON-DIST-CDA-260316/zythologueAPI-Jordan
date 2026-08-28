@@ -700,6 +700,97 @@ export const openapiSpec = {
         },
       },
     },
+    "/beers/{id}/ingredients": {
+      post: {
+        summary: "Associe un ingrédient à une bière",
+        parameters: [idParam],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  ingredientId: { type: "integer", minimum: 1 },
+                },
+                required: ["ingredientId"],
+              },
+              example: { ingredientId: 1 },
+            },
+          },
+        },
+        responses: {
+          "201": {
+            description: "Ingrédient associé (renvoie l'ingrédient)",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Ingredient" },
+                example: ingredientExample,
+              },
+            },
+          },
+          "400": {
+            description: "id non conforme, ou body invalide",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: { message: "Données invalides", errors: {} },
+              },
+            },
+          },
+          "404": {
+            description: "Aucune bière ou aucun ingrédient avec cet id",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: { message: "Ingrédient non trouvé" },
+              },
+            },
+          },
+          "409": {
+            description: "Cet ingrédient est déjà associé à cette bière",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: {
+                  message: "Cet ingrédient est déjà associé à cette bière",
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/beers/{id}/ingredients/{ingredientId}": {
+      delete: {
+        summary: "Dissocie un ingrédient d'une bière",
+        parameters: [
+          idParam,
+          {
+            name: "ingredientId",
+            in: "path",
+            required: true,
+            description: "Identifiant de l'ingrédient (entier positif)",
+            schema: { type: "integer", minimum: 1 },
+          },
+        ],
+        responses: {
+          "204": { description: "Ingrédient dissocié" },
+          "400": idInvalidResponse,
+          "404": {
+            description: "Aucune association entre cette bière et cet ingrédient",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: {
+                  message: "Association ingrédient/bière non trouvée",
+                },
+              },
+            },
+          },
+        },
+      },
+    },
     "/beers/{id}/photos": {
       get: {
         summary: "Liste les photos d'une bière, par ordre chronologique",
