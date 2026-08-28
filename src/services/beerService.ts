@@ -1,3 +1,4 @@
+import { ConflictError, NotFoundError, BadRequestError } from "../errors/httpError.ts";
 import type { Beer } from "../models/beer.ts";
 import type { BeerRepository } from "../repositories/beerRepository.ts";
 import type {
@@ -30,46 +31,43 @@ export class BeerService {
     };
   }
 
-  async getOneById(beerId: number): Promise<Beer | null> {
-    return this.beerRepository.findOneById(beerId);
+  async getOneById(beerId: number): Promise<Beer> {
+    const beer = await this.beerRepository.findOneById(beerId);
+    if (!beer) throw new NotFoundError("Bière non trouvée");
+    return beer;
   }
 
-  async deleteOneById(beerId: number): Promise<boolean> {
-    return this.beerRepository.deleteOneById(beerId);
+  async deleteOneById(beerId: number): Promise<void> {
+    const deleted = await this.beerRepository.deleteOneById(beerId);
+    if (!deleted) throw new NotFoundError("Bière non trouvée");
   }
 
-  async addOne(
-    beerInput: CreateBeerInput,
-  ): Promise<Beer | "BREWERY_NOT_FOUND" | "NAME_ALREADY_EXISTS"> {
+  async addOne(beerInput: CreateBeerInput): Promise<Beer> {
     const breweryExists = await this.beerRepository.breweryExists(
       beerInput.breweryId,
     );
-    if (!breweryExists) return "BREWERY_NOT_FOUND";
+    if (!breweryExists) throw new NotFoundError("Brasserie non trouvée");
     const beerNameExists = await this.beerRepository.beerNameExists(
       beerInput.name,
     );
-    if (beerNameExists) return "NAME_ALREADY_EXISTS";
+    if (beerNameExists) {
+      throw new ConflictError("Une bière de ce nom existe déjà");
+    }
     return this.beerRepository.addOne(beerInput);
   }
 
   async updateOneById(
     beerId: number,
     patch: PatchBeerInput,
-  ): Promise<
-    | Beer
-    | "BEER_NOT_FOUND"
-    | "BREWERY_NOT_FOUND"
-    | "NAME_ALREADY_EXISTS"
-    | "INVALID_ALCOHOL_COHERENCE"
-  > {
+  ): Promise<Beer> {
     const currentBeer = await this.beerRepository.findOneById(beerId);
-    if (!currentBeer) return "BEER_NOT_FOUND";
+    if (!currentBeer) throw new NotFoundError("Bière non trouvée");
 
     if (patch.breweryId !== undefined) {
       const breweryExists = await this.beerRepository.breweryExists(
         patch.breweryId,
       );
-      if (!breweryExists) return "BREWERY_NOT_FOUND";
+      if (!breweryExists) throw new NotFoundError("Brasserie non trouvée");
     }
 
     if (patch.name !== undefined && patch.name !== currentBeer.name) {
@@ -77,7 +75,9 @@ export class BeerService {
         patch.name,
         beerId,
       );
-      if (nameExists) return "NAME_ALREADY_EXISTS";
+      if (nameExists) {
+        throw new ConflictError("Une bière de ce nom existe déjà");
+      }
     }
 
     const mergedFields = {
@@ -93,7 +93,9 @@ export class BeerService {
     };
 
     if (mergedFields.isAlcoholFree !== mergedFields.alcoholLevel < 0.5) {
-      return "INVALID_ALCOHOL_COHERENCE";
+      throw new BadRequestError(
+        "isAlcoholFree doit correspondre au taux d'alcool (sans alcool si < 0.5%, avec alcool sinon)",
+      );
     }
 
     const updatedBeer = await this.beerRepository.updateOneById(
