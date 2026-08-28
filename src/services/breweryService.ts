@@ -1,3 +1,4 @@
+import { ConflictError, NotFoundError } from "../errors/httpError.ts";
 import type { Brewery } from "../models/brewery.ts";
 import type { BreweryRepository } from "../repositories/breweryRepository.ts";
 import type {
@@ -31,8 +32,10 @@ export class BreweryService {
     };
   }
 
-  async getOneById(breweryId: number): Promise<Brewery | null> {
-    return this.breweryRepository.findOneById(breweryId);
+  async getOneById(breweryId: number): Promise<Brewery> {
+    const brewery = await this.breweryRepository.findOneById(breweryId);
+    if (!brewery) throw new NotFoundError("Brasserie non trouvée");
+    return brewery;
   }
 
   /**
@@ -42,44 +45,47 @@ export class BreweryService {
    * ordre, un échec disque ne laisse jamais une ligne pointant vers un fichier
    * absent.
    */
-  async deleteOneById(breweryId: number): Promise<boolean> {
+  async deleteOneById(breweryId: number): Promise<void> {
     const photoUrls =
       await this.breweryRepository.findPhotoUrlsByBreweryId(breweryId);
 
     const deleted = await this.breweryRepository.deleteOneById(breweryId);
-    if (!deleted) return false;
+    if (!deleted) throw new NotFoundError("Brasserie non trouvée");
 
     // removeManagedFile ignore les URLs qui ne sont pas les nôtres (seed).
+    // Un échec ici (ex. EACCES) remonte tel quel : errorHandler le loggera et
+    // répondra 500 plutôt que de laisser un comportement non défini.
     for (const photo of photoUrls) {
       await removeManagedFile(photo.url);
       await removeManagedFile(photo.thumbnailUrl);
     }
-    return true;
   }
 
-  async addOne(
-    breweryInput: CreateBreweryInput,
-  ): Promise<Brewery | "NAME_ALREADY_EXISTS"> {
+  async addOne(breweryInput: CreateBreweryInput): Promise<Brewery> {
     const breweryNameExists = await this.breweryRepository.breweryNameExists(
       breweryInput.name,
     );
-    if (breweryNameExists) return "NAME_ALREADY_EXISTS";
+    if (breweryNameExists) {
+      throw new ConflictError("Une brasserie de ce nom existe déjà");
+    }
     return this.breweryRepository.addOne(breweryInput);
   }
 
   async updateOneById(
     breweryId: number,
     patch: PatchBreweryInput,
-  ): Promise<Brewery | "BREWERY_NOT_FOUND" | "NAME_ALREADY_EXISTS"> {
+  ): Promise<Brewery> {
     const currentBrewery = await this.breweryRepository.findOneById(breweryId);
-    if (!currentBrewery) return "BREWERY_NOT_FOUND";
+    if (!currentBrewery) throw new NotFoundError("Brasserie non trouvée");
 
     if (patch.name !== undefined && patch.name !== currentBrewery.name) {
       const nameExists = await this.breweryRepository.breweryNameExists(
         patch.name,
         breweryId,
       );
-      if (nameExists) return "NAME_ALREADY_EXISTS";
+      if (nameExists) {
+        throw new ConflictError("Une brasserie de ce nom existe déjà");
+      }
     }
 
     const mergedFields = {
