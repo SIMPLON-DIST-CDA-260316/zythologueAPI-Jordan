@@ -1,0 +1,19 @@
+meta {
+  name: Upload beer photo
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/beers/:id/photos
+  body: multipartForm
+  auth: none
+}
+
+params:path {
+  id: 1
+}
+
+body:multipart-form {
+  photo: @file(C:\chemin\vers\une-photo.jpg)
+}

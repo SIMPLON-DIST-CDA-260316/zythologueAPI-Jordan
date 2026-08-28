@@ -1,0 +1,21 @@
+meta {
+  name: Update beer (patch)
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/beers/:id
+  body: json
+  auth: none
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "price": 5
+  }
+}

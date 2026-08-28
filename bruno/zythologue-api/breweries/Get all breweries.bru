@@ -1,0 +1,21 @@
+meta {
+  name: Get all breweries
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/breweries?page=1&limit=5
+  body: none
+  auth: none
+}
+
+params:query {
+  page: 1
+  limit: 5
+  ~country: France
+  ~city: Lille
+  ~name: Brasserie
+  ~sortBy: name
+  ~order: asc
+}

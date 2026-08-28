@@ -1,0 +1,16 @@
+meta {
+  name: Delete brewery photo
+  type: http
+  seq: 3
+}
+
+delete {
+  url: {{baseUrl}}/breweries/:id/photos/:photoId
+  body: none
+  auth: none
+}
+
+params:path {
+  id: 1
+  photoId: 1
+}

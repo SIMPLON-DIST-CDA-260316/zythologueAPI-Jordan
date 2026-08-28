@@ -1,0 +1,15 @@
+meta {
+  name: Get brewery by id
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/breweries/:id
+  body: none
+  auth: none
+}
+
+params:path {
+  id: 1
+}

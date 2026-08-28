@@ -1,0 +1,21 @@
+meta {
+  name: Update brewery (patch)
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/breweries/:id
+  body: json
+  auth: none
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "city": "Roubaix"
+  }
+}

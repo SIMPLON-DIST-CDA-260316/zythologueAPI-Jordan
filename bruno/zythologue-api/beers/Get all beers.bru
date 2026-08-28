@@ -1,0 +1,20 @@
+meta {
+  name: Get all beers
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/beers?page=1&limit=5
+  body: none
+  auth: none
+}
+
+params:query {
+  page: 1
+  limit: 5
+  ~breweryId: 1
+  ~isAlcoholFree: true
+  ~sortBy: price
+  ~order: asc
+}

@@ -1,0 +1,15 @@
+meta {
+  name: List beer photos
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/beers/:id/photos
+  body: none
+  auth: none
+}
+
+params:path {
+  id: 1
+}

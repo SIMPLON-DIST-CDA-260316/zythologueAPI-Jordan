@@ -1,0 +1,22 @@
+meta {
+  name: Create beer
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/beers
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "IPA Test",
+    "description": "Une IPA houblonnée",
+    "price": 4.5,
+    "alcoholLevel": 6.2,
+    "isAlcoholFree": false,
+    "breweryId": 1
+  }
+}

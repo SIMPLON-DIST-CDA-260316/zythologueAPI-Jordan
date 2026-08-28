@@ -1,0 +1,21 @@
+meta {
+  name: Create brewery
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/breweries
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Brasserie Test",
+    "description": "Une brasserie artisanale",
+    "country": "France",
+    "city": "Lille",
+    "website": "https://example.com"
+  }
+}

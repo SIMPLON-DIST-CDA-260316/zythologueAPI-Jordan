@@ -1,0 +1,18 @@
+meta {
+  name: Get beer logs
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/beer-logs?page=1&limit=5
+  body: none
+  auth: none
+}
+
+params:query {
+  page: 1
+  limit: 5
+  ~beerId: 1
+  ~order: desc
+}
