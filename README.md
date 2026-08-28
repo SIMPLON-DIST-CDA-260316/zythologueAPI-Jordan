@@ -52,7 +52,9 @@ Exemple de représentation JSON d'une bière telle que renvoyée par l'API :
   "alcoholLevel": 8,
   "isAlcoholFree": false,
   "breweryName": "Brasserie d'Achouffe",
-  "breweryId": 2
+  "breweryId": 2,
+  "categories": [{ "id": 1, "name": "Ambrée" }],
+  "ingredients": [{ "id": 1, "name": "Houblon Saaz" }]
 }
 ```
 
@@ -66,6 +68,8 @@ Exemple de représentation JSON d'une bière telle que renvoyée par l'API :
 | `isAlcoholFree` | boolean            | `true` si `alcoholLevel < 0.5`, `false` sinon      |
 | `breweryName`   | string             | Nom de la brasserie associée                       |
 | `breweryId`     | number             | Identifiant de la brasserie associée                |
+| `categories`    | `{id, name}[]`     | Catégories associées. Présent uniquement sur `GET /beers/:id`, `POST /beers` et `PATCH /beers/:id` (absent sur la liste `GET /beers`) |
+| `ingredients`   | `{id, name}[]`     | Ingrédients associés. Mêmes conditions de présence que `categories` |
 
 En cas d'erreur serveur inattendue (code `500`), la réponse a la forme `{ "message": "..." }`.
 
@@ -82,6 +86,8 @@ Récupère une liste paginée de bières, avec filtrage et tri optionnels.
 | Nom | Type | Valeurs acceptées | Défaut | Description |
 |---|---|---|---|---|
 | `breweryId` | number | entier positif | — | Filtre les bières d'une brasserie donnée |
+| `categoryId` | number | entier positif | — | Filtre les bières associées à une catégorie donnée |
+| `ingredientId` | number | entier positif | — | Filtre les bières associées à un ingrédient donné |
 | `isAlcoholFree` | boolean | `true` \| `false` | — | Filtre par présence/absence d'alcool |
 | `sortBy` | string | `price` \| `alcoholLevel` | tri par `id` | Champ de tri |
 | `order` | string | `asc` \| `desc` | `asc` | Sens du tri |
@@ -415,3 +421,26 @@ Supprime une brasserie par son identifiant.
 | 204 | Brasserie supprimée | (vide) |
 | 400 | `id` non conforme | `{ "message": "L'identifiant n'est pas conforme" }` |
 | 404 | Aucune brasserie avec cet id | `{ "message": "Brasserie non trouvée" }` |
+
+---
+
+## Autres ressources
+
+Le détail complet (body, query params, réponses, exemples) de chaque endpoint ci-dessous est disponible dans le Swagger UI (`/api-docs`), tenu à jour au fil des ajouts. Liste des routes disponibles, par ressource :
+
+**Photos** (sous-ressources de `beer` et `brewery`)
+- `GET/POST /api/v1/beers/:id/photos`, `DELETE /api/v1/beers/:id/photos/:photoId`
+- `GET/POST /api/v1/breweries/:id/photos`, `DELETE /api/v1/breweries/:id/photos/:photoId`
+
+**`Category`** — CRUD complet, même forme que `Brewery` (`id`, `name`, `description`)
+- `GET /api/v1/categories`, `GET /api/v1/categories/:id`, `POST /api/v1/categories`, `PATCH /api/v1/categories/:id`, `DELETE /api/v1/categories/:id`
+
+**`Ingredient`** — CRUD complet (`id`, `name`, `description` nullable)
+- `GET /api/v1/ingredients`, `GET /api/v1/ingredients/:id`, `POST /api/v1/ingredients`, `PATCH /api/v1/ingredients/:id`, `DELETE /api/v1/ingredients/:id`
+
+**`beer_category` / `beer_ingredient`** (tables de liaison, écriture seule — la lecture passe par `categories`/`ingredients` embarqués dans `GET /beers/:id`, cf. ressource `Beer` ci-dessus)
+- `POST /api/v1/beers/:id/categories` (body `{categoryId}`), `DELETE /api/v1/beers/:id/categories/:categoryId`
+- `POST /api/v1/beers/:id/ingredients` (body `{ingredientId}`), `DELETE /api/v1/beers/:id/ingredients/:ingredientId`
+
+**`beer_log`** — journal d'audit en lecture seule, alimenté par un trigger PostgreSQL sur chaque insertion de bière
+- `GET /api/v1/beer-logs`
