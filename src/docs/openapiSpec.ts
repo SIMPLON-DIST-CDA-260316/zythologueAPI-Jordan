@@ -146,6 +146,21 @@ const breweryExample = {
   beerCount: 4,
 };
 
+const categorySchema = {
+  type: "object",
+  properties: {
+    id: { type: "integer", description: "Identifiant unique de la catégorie" },
+    name: { type: "string", description: "Nom de la catégorie (unique)" },
+    description: { type: "string", description: "Description libre (obligatoire)" },
+  },
+};
+
+const categoryExample = {
+  id: 1,
+  name: "IPA",
+  description: "Bières houblonnées, amères et souvent fruitées",
+};
+
 const breweryPhotoSchema = {
   type: "object",
   properties: {
@@ -264,6 +279,34 @@ const breweryNameConflictResponse = {
   },
 };
 
+const categoryIdParam = {
+  name: "id",
+  in: "path",
+  required: true,
+  description: "Identifiant de la catégorie (entier positif)",
+  schema: { type: "integer", minimum: 1 },
+};
+
+const categoryNotFoundResponse = {
+  description: "Aucune catégorie avec cet id",
+  content: {
+    "application/json": {
+      schema: { $ref: "#/components/schemas/Error" },
+      example: { message: "Catégorie non trouvée" },
+    },
+  },
+};
+
+const categoryNameConflictResponse = {
+  description: "Une catégorie avec ce name existe déjà",
+  content: {
+    "application/json": {
+      schema: { $ref: "#/components/schemas/Error" },
+      example: { message: "Une catégorie de ce nom existe déjà" },
+    },
+  },
+};
+
 export const openapiSpec = {
   openapi: "3.0.3",
   info: {
@@ -280,6 +323,7 @@ export const openapiSpec = {
       BeerPhoto: beerPhotoSchema,
       Brewery: brewerySchema,
       BreweryPhoto: breweryPhotoSchema,
+      Category: categorySchema,
       Error: errorSchema,
     },
   },
@@ -1006,6 +1050,209 @@ export const openapiSpec = {
               },
             },
           },
+        },
+      },
+    },
+    "/categories": {
+      get: {
+        summary: "Liste paginée de catégories, avec filtrage et tri optionnels",
+        parameters: [
+          {
+            name: "name",
+            in: "query",
+            description:
+              "Recherche partielle sur le nom, insensible à la casse",
+            schema: { type: "string" },
+          },
+          {
+            name: "sortBy",
+            in: "query",
+            description: "Champ de tri (défaut : tri par id)",
+            schema: { type: "string", enum: ["name"] },
+          },
+          {
+            name: "order",
+            in: "query",
+            description: "Sens du tri",
+            schema: { type: "string", enum: ["asc", "desc"], default: "asc" },
+          },
+          {
+            name: "page",
+            in: "query",
+            description: "Numéro de page",
+            schema: { type: "integer", minimum: 1, default: 1 },
+          },
+          {
+            name: "limit",
+            in: "query",
+            description: "Nombre de résultats par page (max 100)",
+            schema: { type: "integer", minimum: 1, maximum: 100, default: 5 },
+          },
+        ],
+        responses: {
+          "200": {
+            description: "Succès",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    data: {
+                      type: "array",
+                      items: { $ref: "#/components/schemas/Category" },
+                    },
+                    page: { type: "integer" },
+                    limit: { type: "integer" },
+                    total: { type: "integer" },
+                    totalPages: { type: "integer" },
+                  },
+                },
+                example: {
+                  data: [categoryExample],
+                  page: 1,
+                  limit: 5,
+                  total: 8,
+                  totalPages: 2,
+                },
+              },
+            },
+          },
+          "400": {
+            description: "Query param invalide ou clé inconnue",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: {
+                  message: "Paramètres de requête invalides",
+                  errors: {},
+                },
+              },
+            },
+          },
+        },
+      },
+      post: {
+        summary: "Crée une nouvelle catégorie",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  name: {
+                    type: "string",
+                    maxLength: 255,
+                    description:
+                      "Non vide (après trim), doit être unique en base",
+                  },
+                  description: {
+                    type: "string",
+                    description: "Non vide (après trim), obligatoire",
+                  },
+                },
+                required: ["name", "description"],
+              },
+              example: {
+                name: "IPA",
+                description: "Bières houblonnées, amères et souvent fruitées",
+              },
+            },
+          },
+        },
+        responses: {
+          "201": {
+            description: "Catégorie créée",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Category" },
+                example: categoryExample,
+              },
+            },
+          },
+          "400": {
+            description: "Body invalide (champ manquant, type incorrect)",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: { message: "Données invalides", errors: {} },
+              },
+            },
+          },
+          "409": categoryNameConflictResponse,
+        },
+      },
+    },
+    "/categories/{id}": {
+      get: {
+        summary: "Récupère une catégorie par son identifiant",
+        parameters: [categoryIdParam],
+        responses: {
+          "200": {
+            description: "Catégorie trouvée",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Category" },
+                example: categoryExample,
+              },
+            },
+          },
+          "400": idInvalidResponse,
+          "404": categoryNotFoundResponse,
+        },
+      },
+      patch: {
+        summary:
+          "Modifie partiellement une catégorie existante (seuls les champs envoyés sont modifiés)",
+        parameters: [categoryIdParam],
+        requestBody: {
+          required: true,
+          description: "Tous les champs sont optionnels, mais au moins un doit être fourni.",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  name: { type: "string", maxLength: 255 },
+                  description: { type: "string" },
+                },
+              },
+              example: { description: "Bières houblonnées et amères" },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Catégorie mise à jour",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Category" },
+                example: categoryExample,
+              },
+            },
+          },
+          "400": {
+            description: "id non conforme, ou body vide/invalide",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: { message: "Aucun champ à modifier" },
+              },
+            },
+          },
+          "404": categoryNotFoundResponse,
+          "409": categoryNameConflictResponse,
+        },
+      },
+      delete: {
+        summary: "Supprime une catégorie par son identifiant",
+        description:
+          "Suppression en cascade : les associations avec les bières (beer_category) sont supprimées avec elle. Aucune photo ni fichier associé, contrairement à brewery/beer.",
+        parameters: [categoryIdParam],
+        responses: {
+          "204": { description: "Catégorie supprimée" },
+          "400": idInvalidResponse,
+          "404": categoryNotFoundResponse,
         },
       },
     },

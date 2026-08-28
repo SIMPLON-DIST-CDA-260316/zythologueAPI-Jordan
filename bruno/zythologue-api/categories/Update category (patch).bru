@@ -1,0 +1,21 @@
+meta {
+  name: Update category (patch)
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/categories/:id
+  body: json
+  auth: none
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "description": "Bières houblonnées et amères"
+  }
+}

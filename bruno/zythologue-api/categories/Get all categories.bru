@@ -1,0 +1,19 @@
+meta {
+  name: Get all categories
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/categories?page=1&limit=5
+  body: none
+  auth: none
+}
+
+params:query {
+  page: 1
+  limit: 5
+  ~name: IPA
+  ~sortBy: name
+  ~order: asc
+}
