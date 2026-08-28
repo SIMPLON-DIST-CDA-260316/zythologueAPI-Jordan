@@ -2,6 +2,8 @@ import express, { type Express } from "express";
 import swaggerUi from "swagger-ui-express";
 import { UPLOADS_PUBLIC_PATH, UPLOADS_ROOT } from "./config/upload.ts";
 import { openapiSpec } from "./docs/openapiSpec.ts";
+import { errorHandler } from "./middlewares/errorHandler.ts";
+import { notFoundHandler } from "./middlewares/notFoundHandler.ts";
 import v1Router from "./routes/v1/index.ts";
 import { ensureUploadDirectories } from "./services/imageService.ts";
 
@@ -34,6 +36,9 @@ app.use(
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(openapiSpec));
 
 app.use("/api/v1", v1Router);
+
+app.use(notFoundHandler); // routes non matchées
+app.use(errorHandler); // toujours en tout dernier
 
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
