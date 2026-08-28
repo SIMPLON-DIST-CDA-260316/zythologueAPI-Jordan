@@ -1,0 +1,19 @@
+meta {
+  name: Get all ingredients
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/ingredients?page=1&limit=5
+  body: none
+  auth: none
+}
+
+params:query {
+  page: 1
+  limit: 5
+  ~name: Houblon
+  ~sortBy: name
+  ~order: asc
+}

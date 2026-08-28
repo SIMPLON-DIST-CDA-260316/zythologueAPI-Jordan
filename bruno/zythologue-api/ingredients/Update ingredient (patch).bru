@@ -1,0 +1,21 @@
+meta {
+  name: Update ingredient (patch)
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/ingredients/:id
+  body: json
+  auth: none
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "description": "Houblon noble tchèque"
+  }
+}

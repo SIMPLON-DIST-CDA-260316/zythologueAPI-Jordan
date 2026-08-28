@@ -1,0 +1,18 @@
+meta {
+  name: Create ingredient
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/ingredients
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Ingrédient test",
+    "description": "Un ingrédient de bière"
+  }
+}

@@ -1,0 +1,15 @@
+meta {
+  name: Get ingredient by id
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/ingredients/:id
+  body: none
+  auth: none
+}
+
+params:path {
+  id: 1
+}

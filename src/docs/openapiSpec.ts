@@ -161,6 +161,25 @@ const categoryExample = {
   description: "Bières houblonnées, amères et souvent fruitées",
 };
 
+const ingredientSchema = {
+  type: "object",
+  properties: {
+    id: { type: "integer", description: "Identifiant unique de l'ingrédient" },
+    name: { type: "string", description: "Nom de l'ingrédient (unique)" },
+    description: {
+      type: "string",
+      nullable: true,
+      description: "Description libre",
+    },
+  },
+};
+
+const ingredientExample = {
+  id: 1,
+  name: "Houblon Saaz",
+  description: "Houblon noble tchèque, notes florales et épicées",
+};
+
 const breweryPhotoSchema = {
   type: "object",
   properties: {
@@ -307,6 +326,34 @@ const categoryNameConflictResponse = {
   },
 };
 
+const ingredientIdParam = {
+  name: "id",
+  in: "path",
+  required: true,
+  description: "Identifiant de l'ingrédient (entier positif)",
+  schema: { type: "integer", minimum: 1 },
+};
+
+const ingredientNotFoundResponse = {
+  description: "Aucun ingrédient avec cet id",
+  content: {
+    "application/json": {
+      schema: { $ref: "#/components/schemas/Error" },
+      example: { message: "Ingrédient non trouvé" },
+    },
+  },
+};
+
+const ingredientNameConflictResponse = {
+  description: "Un ingrédient avec ce name existe déjà",
+  content: {
+    "application/json": {
+      schema: { $ref: "#/components/schemas/Error" },
+      example: { message: "Un ingrédient de ce nom existe déjà" },
+    },
+  },
+};
+
 export const openapiSpec = {
   openapi: "3.0.3",
   info: {
@@ -324,6 +371,7 @@ export const openapiSpec = {
       Brewery: brewerySchema,
       BreweryPhoto: breweryPhotoSchema,
       Category: categorySchema,
+      Ingredient: ingredientSchema,
       Error: errorSchema,
     },
   },
@@ -1253,6 +1301,211 @@ export const openapiSpec = {
           "204": { description: "Catégorie supprimée" },
           "400": idInvalidResponse,
           "404": categoryNotFoundResponse,
+        },
+      },
+    },
+    "/ingredients": {
+      get: {
+        summary: "Liste paginée d'ingrédients, avec filtrage et tri optionnels",
+        parameters: [
+          {
+            name: "name",
+            in: "query",
+            description:
+              "Recherche partielle sur le nom, insensible à la casse",
+            schema: { type: "string" },
+          },
+          {
+            name: "sortBy",
+            in: "query",
+            description: "Champ de tri (défaut : tri par id)",
+            schema: { type: "string", enum: ["name"] },
+          },
+          {
+            name: "order",
+            in: "query",
+            description: "Sens du tri",
+            schema: { type: "string", enum: ["asc", "desc"], default: "asc" },
+          },
+          {
+            name: "page",
+            in: "query",
+            description: "Numéro de page",
+            schema: { type: "integer", minimum: 1, default: 1 },
+          },
+          {
+            name: "limit",
+            in: "query",
+            description: "Nombre de résultats par page (max 100)",
+            schema: { type: "integer", minimum: 1, maximum: 100, default: 5 },
+          },
+        ],
+        responses: {
+          "200": {
+            description: "Succès",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    data: {
+                      type: "array",
+                      items: { $ref: "#/components/schemas/Ingredient" },
+                    },
+                    page: { type: "integer" },
+                    limit: { type: "integer" },
+                    total: { type: "integer" },
+                    totalPages: { type: "integer" },
+                  },
+                },
+                example: {
+                  data: [ingredientExample],
+                  page: 1,
+                  limit: 5,
+                  total: 12,
+                  totalPages: 3,
+                },
+              },
+            },
+          },
+          "400": {
+            description: "Query param invalide ou clé inconnue",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: {
+                  message: "Paramètres de requête invalides",
+                  errors: {},
+                },
+              },
+            },
+          },
+        },
+      },
+      post: {
+        summary: "Crée un nouvel ingrédient",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  name: {
+                    type: "string",
+                    maxLength: 255,
+                    description:
+                      "Non vide (après trim), doit être unique en base",
+                  },
+                  description: {
+                    type: "string",
+                    nullable: true,
+                    description: "Optionnelle, null accepté",
+                  },
+                },
+                required: ["name"],
+              },
+              example: {
+                name: "Houblon Saaz",
+                description: "Houblon noble tchèque, notes florales et épicées",
+              },
+            },
+          },
+        },
+        responses: {
+          "201": {
+            description: "Ingrédient créé",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Ingredient" },
+                example: ingredientExample,
+              },
+            },
+          },
+          "400": {
+            description: "Body invalide (champ manquant, type incorrect)",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: { message: "Données invalides", errors: {} },
+              },
+            },
+          },
+          "409": ingredientNameConflictResponse,
+        },
+      },
+    },
+    "/ingredients/{id}": {
+      get: {
+        summary: "Récupère un ingrédient par son identifiant",
+        parameters: [ingredientIdParam],
+        responses: {
+          "200": {
+            description: "Ingrédient trouvé",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Ingredient" },
+                example: ingredientExample,
+              },
+            },
+          },
+          "400": idInvalidResponse,
+          "404": ingredientNotFoundResponse,
+        },
+      },
+      patch: {
+        summary:
+          "Modifie partiellement un ingrédient existant (seuls les champs envoyés sont modifiés)",
+        parameters: [ingredientIdParam],
+        requestBody: {
+          required: true,
+          description:
+            "Tous les champs sont optionnels, mais au moins un doit être fourni. description accepte null pour effacer la valeur.",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  name: { type: "string", maxLength: 255 },
+                  description: { type: "string", nullable: true },
+                },
+              },
+              example: { description: "Houblon noble tchèque" },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Ingrédient mis à jour",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Ingredient" },
+                example: ingredientExample,
+              },
+            },
+          },
+          "400": {
+            description: "id non conforme, ou body vide/invalide",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: { message: "Aucun champ à modifier" },
+              },
+            },
+          },
+          "404": ingredientNotFoundResponse,
+          "409": ingredientNameConflictResponse,
+        },
+      },
+      delete: {
+        summary: "Supprime un ingrédient par son identifiant",
+        description:
+          "Suppression en cascade : les associations avec les bières (beer_ingredient) sont supprimées avec lui. Aucune photo ni fichier associé.",
+        parameters: [ingredientIdParam],
+        responses: {
+          "204": { description: "Ingrédient supprimé" },
+          "400": idInvalidResponse,
+          "404": ingredientNotFoundResponse,
         },
       },
     },
