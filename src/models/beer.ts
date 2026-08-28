@@ -1,3 +1,8 @@
+export interface BeerTag {
+  id: number;
+  name: string;
+}
+
 export interface BeerRow {
   id: number;
   name: string;
@@ -7,6 +12,10 @@ export interface BeerRow {
   is_alcohol_free: boolean;
   breweryName: string;
   breweryId: number;
+  // Absents des lignes de findAll (non sélectionnés) : seul findOneById les
+  // renseigne, via un LEFT JOIN + json_agg côté SQL.
+  categories?: BeerTag[];
+  ingredients?: BeerTag[];
 }
 
 export class Beer {
@@ -18,6 +27,8 @@ export class Beer {
   readonly isAlcoholFree: boolean;
   readonly breweryName: string;
   readonly breweryId: number;
+  readonly categories?: BeerTag[];
+  readonly ingredients?: BeerTag[];
 
   constructor(
     id: number,
@@ -28,6 +39,8 @@ export class Beer {
     isAlcoholFree: boolean,
     breweryName: string,
     breweryId: number,
+    categories?: BeerTag[],
+    ingredients?: BeerTag[],
   ) {
     this.id = id;
     this.name = name;
@@ -37,6 +50,8 @@ export class Beer {
     this.isAlcoholFree = isAlcoholFree;
     this.breweryName = breweryName;
     this.breweryId = breweryId;
+    this.categories = categories;
+    this.ingredients = ingredients;
   }
 
   static fromRow(row: BeerRow): Beer {
@@ -49,6 +64,8 @@ export class Beer {
       row.is_alcohol_free,
       row.breweryName,
       row.breweryId,
+      row.categories,
+      row.ingredients,
     );
   }
 }

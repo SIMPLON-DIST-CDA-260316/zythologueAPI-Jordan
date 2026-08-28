@@ -11,6 +11,8 @@ export class BeerRepository {
 
   async findAll(filters: {
     breweryId?: number;
+    categoryId?: number;
+    ingredientId?: number;
     isAlcoholFree?: boolean;
     sortBy?: "price" | "alcoholLevel";
     order: "asc" | "desc";
@@ -26,15 +28,27 @@ export class BeerRepository {
     const direction = filters.order === "desc" ? "DESC" : "ASC";
     const offset = (filters.page - 1) * filters.limit;
 
+    // categoryId/ingredientId passent par une sous-requête IN plutôt qu'un
+    // JOIN direct : évite de doublonner les lignes beer (une bière peut avoir
+    // plusieurs catégories/ingrédients), sans avoir besoin de GROUP BY ici.
     const result = await this.pool.query<BeerRow & { total: string }>(
       `SELECT be.id, be.name, be.description, be.price, be.alcohol_level, be.is_alcohol_free,
               br.name AS "breweryName", be.brewery_id AS "breweryId", COUNT(*) OVER() AS total
        FROM beer AS be JOIN brewery AS br ON be.brewery_id = br.id
        WHERE ($1::int IS NULL OR be.brewery_id = $1)
          AND ($2::boolean IS NULL OR be.is_alcohol_free = $2)
+         AND ($5::int IS NULL OR be.id IN (SELECT beer_id FROM beer_category WHERE category_id = $5))
+         AND ($6::int IS NULL OR be.id IN (SELECT beer_id FROM beer_ingredient WHERE ingredient_id = $6))
        ORDER BY ${sortColumn} ${direction}
        LIMIT $3 OFFSET $4`,
-      [filters.breweryId ?? null, filters.isAlcoholFree ?? null, filters.limit, offset],
+      [
+        filters.breweryId ?? null,
+        filters.isAlcoholFree ?? null,
+        filters.limit,
+        offset,
+        filters.categoryId ?? null,
+        filters.ingredientId ?? null,
+      ],
     );
 
     const total = result.rows[0] ? Number(result.rows[0].total) : 0;
@@ -42,9 +56,26 @@ export class BeerRepository {
   }
 
   async findOneById(beerId: number): Promise<Beer | null> {
+    // LEFT JOIN doublé (categories × ingredients) : DISTINCT dans json_agg
+    // neutralise le produit croisé, COALESCE renvoie [] plutôt que [null]
+    // pour une bière sans catégorie/ingrédient. GROUP BY be.id, br.id suffit
+    // (dépendance fonctionnelle sur les clés primaires) pour sélectionner
+    // librement be.* et br.name.
     const result = await this.pool.query<BeerRow>(
-      `SELECT be.id, be.name, be.description, be.price, be.alcohol_level, be.is_alcohol_free, br.name AS "breweryName", be.brewery_id AS "breweryId"
-       FROM beer AS be JOIN brewery AS br ON be.brewery_id = br.id WHERE be.id = $1`,
+      `SELECT be.id, be.name, be.description, be.price, be.alcohol_level, be.is_alcohol_free,
+              br.name AS "breweryName", be.brewery_id AS "breweryId",
+              COALESCE(json_agg(DISTINCT jsonb_build_object('id', c.id, 'name', c.name))
+                FILTER (WHERE c.id IS NOT NULL), '[]') AS categories,
+              COALESCE(json_agg(DISTINCT jsonb_build_object('id', i.id, 'name', i.name))
+                FILTER (WHERE i.id IS NOT NULL), '[]') AS ingredients
+       FROM beer AS be
+         JOIN brewery AS br ON be.brewery_id = br.id
+         LEFT JOIN beer_category AS bc ON bc.beer_id = be.id
+         LEFT JOIN category AS c ON c.id = bc.category_id
+         LEFT JOIN beer_ingredient AS bi ON bi.beer_id = be.id
+         LEFT JOIN ingredient AS i ON i.id = bi.ingredient_id
+       WHERE be.id = $1
+       GROUP BY be.id, br.id`,
       [beerId],
     );
     const row = result.rows[0];

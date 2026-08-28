@@ -39,6 +39,8 @@ export type PatchBeerInput = z.infer<typeof patchBeerSchema>;
 export const getBeersQuerySchema = z
   .object({
     breweryId: z.coerce.number().int().positive().optional(),
+    categoryId: z.coerce.number().int().positive().optional(),
+    ingredientId: z.coerce.number().int().positive().optional(),
     isAlcoholFree: z
       .enum(["true", "false"])
       .optional()

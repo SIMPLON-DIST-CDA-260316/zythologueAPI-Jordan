@@ -26,6 +26,30 @@ const beerSchema = {
       type: "integer",
       description: "Identifiant de la brasserie associée",
     },
+    categories: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          id: { type: "integer" },
+          name: { type: "string" },
+        },
+      },
+      description:
+        "Catégories associées à la bière. Présent uniquement sur GET /beers/{id}, POST /beers et PATCH /beers/{id} (absent sur la liste GET /beers).",
+    },
+    ingredients: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          id: { type: "integer" },
+          name: { type: "string" },
+        },
+      },
+      description:
+        "Ingrédients associés à la bière. Présent uniquement sur GET /beers/{id}, POST /beers et PATCH /beers/{id} (absent sur la liste GET /beers).",
+    },
   },
 };
 
@@ -38,6 +62,14 @@ const beerExample = {
   isAlcoholFree: false,
   breweryName: "Brasserie d'Achouffe",
   breweryId: 2,
+};
+
+// Utilisé pour GET /beers/{id}, POST /beers et PATCH /beers/{id} : ces
+// réponses relisent la bière via findOneById, qui embarque categories/ingredients.
+const beerDetailExample = {
+  ...beerExample,
+  categories: [{ id: 1, name: "Ambrée" }],
+  ingredients: [{ id: 1, name: "Houblon Saaz" }],
 };
 
 const beerLogSchema = {
@@ -387,6 +419,18 @@ export const openapiSpec = {
             schema: { type: "integer", minimum: 1 },
           },
           {
+            name: "categoryId",
+            in: "query",
+            description: "Filtre les bières associées à une catégorie donnée",
+            schema: { type: "integer", minimum: 1 },
+          },
+          {
+            name: "ingredientId",
+            in: "query",
+            description: "Filtre les bières associées à un ingrédient donné",
+            schema: { type: "integer", minimum: 1 },
+          },
+          {
             name: "isAlcoholFree",
             in: "query",
             description: "Filtre par présence/absence d'alcool",
@@ -516,7 +560,7 @@ export const openapiSpec = {
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/Beer" },
-                example: beerExample,
+                example: beerDetailExample,
               },
             },
           },
@@ -545,7 +589,7 @@ export const openapiSpec = {
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/Beer" },
-                example: beerExample,
+                example: beerDetailExample,
               },
             },
           },
@@ -583,7 +627,7 @@ export const openapiSpec = {
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/Beer" },
-                example: beerExample,
+                example: beerDetailExample,
               },
             },
           },
