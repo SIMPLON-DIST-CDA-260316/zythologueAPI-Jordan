@@ -1,11 +1,12 @@
 import { BEER_PHOTO_TARGET, MAX_PHOTOS_PER_BEER } from "../config/upload.ts";
+import { ConflictError, NotFoundError } from "../errors/httpError.ts";
 import type { BeerPhoto } from "../models/beerPhoto.ts";
 import type { BeerPhotoRepository } from "../repositories/beerPhotoRepository.ts";
 import {
   generatePhotoVariants,
   removeManagedFile,
+  throwOnImageValidationError,
   validateImage,
-  type ImageValidationError,
 } from "./imageService.ts";
 
 export class BeerPhotoService {
@@ -15,11 +16,9 @@ export class BeerPhotoService {
     this.beerPhotoRepository = beerPhotoRepository;
   }
 
-  async getAllByBeerId(
-    beerId: number,
-  ): Promise<BeerPhoto[] | "BEER_NOT_FOUND"> {
+  async getAllByBeerId(beerId: number): Promise<BeerPhoto[]> {
     const beerExists = await this.beerPhotoRepository.beerExists(beerId);
-    if (!beerExists) return "BEER_NOT_FOUND";
+    if (!beerExists) throw new NotFoundError("Bière non trouvée");
     return this.beerPhotoRepository.findAllByBeerId(beerId);
   }
 
@@ -27,23 +26,22 @@ export class BeerPhotoService {
    * L'ordre des étapes est un choix : on échoue au plus tôt et on n'écrit sur
    * disque qu'en dernier recours, une fois toutes les vérifications passées.
    */
-  async addOne(
-    beerId: number,
-    buffer: Buffer,
-  ): Promise<
-    BeerPhoto | "BEER_NOT_FOUND" | "PHOTO_LIMIT_REACHED" | ImageValidationError
-  > {
+  async addOne(beerId: number, buffer: Buffer): Promise<BeerPhoto> {
     // 1. Requête très bon marché, avant tout travail CPU de décodage.
     const beerExists = await this.beerPhotoRepository.beerExists(beerId);
-    if (!beerExists) return "BEER_NOT_FOUND";
+    if (!beerExists) throw new NotFoundError("Bière non trouvée");
 
     // 2. Empêche un seul client de saturer le disque.
     const photoCount = await this.beerPhotoRepository.countByBeerId(beerId);
-    if (photoCount >= MAX_PHOTOS_PER_BEER) return "PHOTO_LIMIT_REACHED";
+    if (photoCount >= MAX_PHOTOS_PER_BEER) {
+      throw new ConflictError(
+        "Cette bière a déjà le nombre maximum de photos",
+      );
+    }
 
     // 3. Le contenu est-il réellement une image ? (aucune écriture disque ici)
     const validationError = await validateImage(buffer);
-    if (validationError !== null) return validationError;
+    throwOnImageValidationError(validationError);
 
     // 4. Première écriture sur disque : des octets produits par Sharp.
     const generated = await generatePhotoVariants(buffer, BEER_PHOTO_TARGET);
@@ -68,19 +66,15 @@ export class BeerPhotoService {
    * La ligne part d'abord, les fichiers ensuite : dans cet ordre, un échec disque
    * ne laisse jamais une ligne pointant vers un fichier absent.
    */
-  async deleteOneById(
-    beerId: number,
-    photoId: number,
-  ): Promise<true | "PHOTO_NOT_FOUND"> {
+  async deleteOneById(beerId: number, photoId: number): Promise<void> {
     const deleted = await this.beerPhotoRepository.deleteOneById(
       photoId,
       beerId,
     );
-    if (deleted === null) return "PHOTO_NOT_FOUND";
+    if (deleted === null) throw new NotFoundError("Photo non trouvée");
 
     // removeManagedFile ignore les URLs qui ne sont pas les nôtres (seed).
     await removeManagedFile(deleted.url);
     await removeManagedFile(deleted.thumbnailUrl);
-    return true;
   }
 }

@@ -3,6 +3,10 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import sharp, { type Metadata } from "sharp";
 import {
+  BadRequestError,
+  UnsupportedMediaTypeError,
+} from "../errors/httpError.ts";
+import {
   ALLOWED_SHARP_FORMATS,
   FULL_VARIANT,
   MANAGED_UPLOAD_PATTERN,
@@ -73,6 +77,34 @@ export const validateImage = async (
   }
   return null;
 };
+
+/**
+ * Traduit le résultat de validateImage en HttpError. Séparée de
+ * validateImage pour que celle-ci reste une fonction pure sans connaissance
+ * HTTP — c'est ce helper, appelé côté services photo, qui connaît le
+ * vocabulaire Express.
+ */
+export function throwOnImageValidationError(
+  error: ImageValidationError | null,
+): void {
+  if (error === null) return;
+  switch (error) {
+    case "NOT_AN_IMAGE":
+      throw new BadRequestError(
+        "Le fichier envoyé n'est pas une image valide",
+      );
+    case "UNSUPPORTED_FORMAT":
+      throw new UnsupportedMediaTypeError(
+        "Format d'image non supporté (JPEG, PNG, WebP ou AVIF attendu)",
+      );
+    case "IMAGE_TOO_SMALL":
+      throw new BadRequestError("Image trop petite (100 x 100 px minimum)");
+    case "IMAGE_TOO_LARGE":
+      throw new BadRequestError(
+        "Image trop grande (10 000 x 10 000 px maximum)",
+      );
+  }
+}
 
 /** Assertion défensive : aucune donnée client n'entre dans ces chemins, mais on vérifie. */
 const assertInsideUploads = (filePath: string): void => {
