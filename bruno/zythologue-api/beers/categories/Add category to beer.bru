@@ -1,0 +1,21 @@
+meta {
+  name: Add category to beer
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/beers/:id/categories
+  body: json
+  auth: none
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "categoryId": 1
+  }
+}

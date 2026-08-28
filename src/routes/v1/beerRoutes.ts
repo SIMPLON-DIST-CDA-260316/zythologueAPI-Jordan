@@ -10,6 +10,7 @@ import {
   patchBeerSchema,
 } from "../../schemas/beerSchema.ts";
 import { BeerService } from "../../services/beerService.ts";
+import beerCategoryRoutes from "./beerCategoryRoutes.ts";
 import beerPhotoRoutes from "./beerPhotoRoutes.ts";
 
 const beerRepository = new BeerRepository(pool);
@@ -48,5 +49,9 @@ router.patch(
 
 // Sous-ressource : photos d'une bière
 router.use("/:id/photos", beerPhotoRoutes);
+
+// Sous-ressource : catégories associées à une bière (écriture seulement — la
+// lecture passe par le champ categories embarqué dans GET /beers/:id)
+router.use("/:id/categories", beerCategoryRoutes);
 
 export default router;

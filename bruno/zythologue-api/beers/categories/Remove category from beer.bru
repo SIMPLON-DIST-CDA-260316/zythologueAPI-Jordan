@@ -1,0 +1,16 @@
+meta {
+  name: Remove category from beer
+  type: http
+  seq: 2
+}
+
+delete {
+  url: {{baseUrl}}/beers/:id/categories/:categoryId
+  body: none
+  auth: none
+}
+
+params:path {
+  id: 1
+  categoryId: 1
+}

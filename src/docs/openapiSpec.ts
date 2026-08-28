@@ -611,6 +611,95 @@ export const openapiSpec = {
         },
       },
     },
+    "/beers/{id}/categories": {
+      post: {
+        summary: "Associe une catégorie à une bière",
+        parameters: [idParam],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  categoryId: { type: "integer", minimum: 1 },
+                },
+                required: ["categoryId"],
+              },
+              example: { categoryId: 1 },
+            },
+          },
+        },
+        responses: {
+          "201": {
+            description: "Catégorie associée (renvoie la catégorie)",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Category" },
+                example: categoryExample,
+              },
+            },
+          },
+          "400": {
+            description: "id non conforme, ou body invalide",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: { message: "Données invalides", errors: {} },
+              },
+            },
+          },
+          "404": {
+            description: "Aucune bière ou aucune catégorie avec cet id",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: { message: "Catégorie non trouvée" },
+              },
+            },
+          },
+          "409": {
+            description: "Cette catégorie est déjà associée à cette bière",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: {
+                  message: "Cette catégorie est déjà associée à cette bière",
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/beers/{id}/categories/{categoryId}": {
+      delete: {
+        summary: "Dissocie une catégorie d'une bière",
+        parameters: [
+          idParam,
+          {
+            name: "categoryId",
+            in: "path",
+            required: true,
+            description: "Identifiant de la catégorie (entier positif)",
+            schema: { type: "integer", minimum: 1 },
+          },
+        ],
+        responses: {
+          "204": { description: "Catégorie dissociée" },
+          "400": idInvalidResponse,
+          "404": {
+            description: "Aucune association entre cette bière et cette catégorie",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: { message: "Association catégorie/bière non trouvée" },
+              },
+            },
+          },
+        },
+      },
+    },
     "/beers/{id}/photos": {
       get: {
         summary: "Liste les photos d'une bière, par ordre chronologique",
