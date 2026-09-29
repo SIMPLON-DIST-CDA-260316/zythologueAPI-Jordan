@@ -1,0 +1,34 @@
+meta {
+  name: Register - invalid payload
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/auth/register
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "lastName": "",
+    "firstName": "Jean",
+    "email": "pas-un-email",
+    "birthDate": "2020-01-01",
+    "password": "court"
+  }
+}
+
+docs {
+  Tous les champs en erreur d'un coup (nom vide, email invalide, mineur,
+  MDP < 8 caractères) : la réponse liste chaque message dans errors.fieldErrors.
+}
+
+assert {
+  res.status: eq 400
+  res.body.errors.fieldErrors.lastName: isDefined
+  res.body.errors.fieldErrors.email: isDefined
+  res.body.errors.fieldErrors.birthDate: isDefined
+  res.body.errors.fieldErrors.password: isDefined
+}

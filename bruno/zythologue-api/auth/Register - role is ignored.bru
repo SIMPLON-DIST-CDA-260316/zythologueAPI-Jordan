@@ -1,0 +1,36 @@
+meta {
+  name: Register - role is ignored
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/auth/register
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "lastName": "Malin",
+    "firstName": "Eve",
+    "email": "{{registerEmail}}",
+    "birthDate": "1995-06-15",
+    "password": "motdepasse123",
+    "role": "admin"
+  }
+}
+
+script:pre-request {
+  bru.setVar("registerEmail", `eve.malin+${Date.now()}@example.com`);
+}
+
+docs {
+  Tentative d'auto-promotion : Zod supprime les clés inconnues,
+  le compte doit être créé avec le rôle par défaut.
+}
+
+assert {
+  res.status: eq 201
+  res.body.role: eq client
+}

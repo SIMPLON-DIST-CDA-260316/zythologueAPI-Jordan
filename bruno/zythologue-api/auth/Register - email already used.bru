@@ -1,0 +1,30 @@
+meta {
+  name: Register - email already used
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/auth/register
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "lastName": "Dupont",
+    "firstName": "Alice",
+    "email": "ALICE.DUPONT@EXAMPLE.COM",
+    "birthDate": "1990-03-15",
+    "password": "motdepasse123"
+  }
+}
+
+docs {
+  Email d'un user du seed, en majuscules : vérifie que la normalisation
+  en minuscules (Zod) + la contrainte UNIQUE renvoient bien un 409.
+}
+
+assert {
+  res.status: eq 409
+}

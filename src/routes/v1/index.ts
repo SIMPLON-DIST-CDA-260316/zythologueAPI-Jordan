@@ -1,4 +1,5 @@
 import { Router } from "express";
+import authRoutes from "./authRoutes.ts";
 import beerLogRoutes from "./beerLogRoutes.ts";
 import beerRoutes from "./beerRoutes.ts";
 import breweryRoutes from "./breweryRoutes.ts";
@@ -12,5 +13,6 @@ router.use("/beer-logs", beerLogRoutes);
 router.use("/breweries", breweryRoutes);
 router.use("/categories", categoryRoutes);
 router.use("/ingredients", ingredientRoutes);
+router.use("/auth", authRoutes);
 
 export default router;

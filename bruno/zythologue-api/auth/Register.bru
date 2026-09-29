@@ -1,0 +1,33 @@
+meta {
+  name: Register
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/auth/register
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "lastName": "Durand",
+    "firstName": "Jean",
+    "email": "{{registerEmail}}",
+    "birthDate": "1995-06-15",
+    "password": "motdepasse123"
+  }
+}
+
+script:pre-request {
+  // Email unique à chaque envoi, sinon le 2e run prend un 409
+  bru.setVar("registerEmail", `jean.durand+${Date.now()}@example.com`);
+}
+
+assert {
+  res.status: eq 201
+  res.body.password: isUndefined
+  res.body.role: eq client
+  res.body.birthDate: eq 1995-06-15
+}
