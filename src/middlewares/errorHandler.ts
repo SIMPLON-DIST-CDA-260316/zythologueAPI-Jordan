@@ -24,6 +24,20 @@ export function errorHandler(
     return;
   }
 
+  // Erreurs levées par express.json() (JSON malformé → 400, body trop gros → 413) :
+  // elles portent déjà leur status client et expose: true.
+  if (
+    typeof err === "object" &&
+    err !== null &&
+    "expose" in err &&
+    err.expose === true &&
+    "status" in err &&
+    typeof err.status === "number"
+  ) {
+    res.status(err.status).json({ message: "Requête invalide" });
+    return;
+  }
+
   // Erreur inattendue : loggée côté serveur pour le débogage, jamais
   // renvoyée telle quelle au client (fuite de stack, message SQL, ...).
   console.error(err);
