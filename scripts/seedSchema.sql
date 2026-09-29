@@ -32,19 +32,19 @@ RESTART IDENTITY CASCADE;
 -- ============================================================
 
 INSERT INTO "user" (id, lastname, firstname, email, password, birthdate, role, created_at, updated_at) VALUES
-  (1,  'Dupont',   'Alice',     'alice.dupont@example.com',    '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj0og/L.YXme', '1990-03-15', 'admin',  '2023-06-01T10:00:00Z', '2023-06-01T10:00:00Z'),
-  (2,  'Martin',   'Baptiste',  'baptiste.martin@example.com', '$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW',  '1988-07-22', 'client', '2023-06-05T14:30:00Z', '2023-06-05T14:30:00Z'),
-  (3,  'Bernard',  'Clara',     'clara.bernard@example.com',   '$2b$12$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',  '1995-11-08', 'client', '2023-06-10T09:15:00Z', '2023-06-10T09:15:00Z'),
-  (4,  'Leclerc',  'David',     'david.leclerc@example.com',   '$2b$12$4PqE0r6iCwxm5UdNFJqYveyH7vJfZkrR8rJxLp9gVnmD7AkFdGqXK',  '1985-04-30', 'client', '2023-06-15T11:45:00Z', '2023-06-15T11:45:00Z'),
-  (5,  'Moreau',   'Emma',      'emma.moreau@example.com',     '$2b$12$8WmK2mHzY0LG3BzFcDuqJeP5WnHr1kJlT9bX6CmRdV3YfNoIwPaSO',  '1993-09-17', 'client', '2023-07-01T08:00:00Z', '2023-07-01T08:00:00Z'),
-  (6,  'Petit',    'François',  'francois.petit@example.com',  '$2b$12$vZ9jKe1GpBxUmTy3hWiNoO4JfNqPwXkbDlEgRmVsYcHzAoSt5Cr2K',  '1980-12-03', 'client', '2023-07-10T16:20:00Z', '2023-07-10T16:20:00Z'),
-  (7,  'Simon',    'Gabrielle', 'gabrielle.simon@example.com', '$2b$12$aD7fWzLkTqRxJmVnP8hGiOeB1YcNsXdUf6MkHr3ZoAjCpvt2Ew5QL',  '1991-06-25', 'client', '2023-07-15T13:10:00Z', '2023-07-15T13:10:00Z'),
-  (8,  'Lambert',  'Hugo',      'hugo.lambert@example.com',    '$2b$12$XmP4kYzHdJeVwBnCr6qTsOgD2AiLfZuRo5NvEhGbKmXpW8jc7Ft0I',  '1987-02-14', 'client', '2023-08-01T10:30:00Z', '2023-08-01T10:30:00Z'),
-  (9,  'Roux',     'Isabelle',  'isabelle.roux@example.com',   '$2b$12$Kq3rJxBvZoYnDhWeTgLfPiOmC7AuNs5XkRd1Mc6Hj2EwVbtF9Yz4G',  '1994-08-19', 'client', '2023-08-10T15:00:00Z', '2023-08-10T15:00:00Z'),
-  (10, 'Girard',   'Julien',    'julien.girard@example.com',   '$2b$12$MsHjLqBxZdWkYnVpOf3rCgT5AiRe7NuJoP2Xv6HzEbKmFcDt8Yw1S',  '1989-01-07', 'client', '2023-09-01T12:00:00Z', '2023-09-01T12:00:00Z'),
-  (11, 'Lefebvre', 'Karine',    'karine.lefebvre@example.com', '$2b$12$PwBkJrCxVmHdNz7YoLqTsEg4AfRiO3UjKe5Xb2MvDnZp8FcGt1Wh6',  '1996-05-12', 'client', '2023-09-15T09:45:00Z', '2023-09-15T09:45:00Z'),
-  (12, 'Morin',    'Laurent',   'laurent.morin@example.com',   '$2b$12$TrKqBxJnCgZmYdVsHoWfP6iL3EuRoD8AeN5Mj2Xb7KzFtGpVc1Yh4',  '1983-10-28', 'client', '2023-10-01T17:30:00Z', '2023-10-01T17:30:00Z'),
-  (13, 'Garnier',  'Marie',     'marie.garnier@example.com',   '$2b$12$YhNzBrJxKgPmVqCsWoTfD5iE3LuRoM7AeN8Xj2Db6KzFtHpVc4Wm1',  '1992-07-04', 'admin',  '2023-10-15T11:00:00Z', '2023-10-15T11:00:00Z');
+  (1,  'Dupont',   'Alice',     'alice.dupont@example.com',    '$argon2id$v=19$m=65536,p=4,t=3$u8PnPfbgQxCMoL5zfeTBwQ$vxk8hG8H2frVWugvqlHWyrcb+JlqUn7WO6dm7WO7GMM', '1990-03-15', 'admin',  '2023-06-01T10:00:00Z', '2023-06-01T10:00:00Z'),
+  (2,  'Martin',   'Baptiste',  'baptiste.martin@example.com', '$argon2id$v=19$m=65536,p=4,t=3$u8PnPfbgQxCMoL5zfeTBwQ$vxk8hG8H2frVWugvqlHWyrcb+JlqUn7WO6dm7WO7GMM',  '1988-07-22', 'client', '2023-06-05T14:30:00Z', '2023-06-05T14:30:00Z'),
+  (3,  'Bernard',  'Clara',     'clara.bernard@example.com',   '$argon2id$v=19$m=65536,p=4,t=3$u8PnPfbgQxCMoL5zfeTBwQ$vxk8hG8H2frVWugvqlHWyrcb+JlqUn7WO6dm7WO7GMM',  '1995-11-08', 'client', '2023-06-10T09:15:00Z', '2023-06-10T09:15:00Z'),
+  (4,  'Leclerc',  'David',     'david.leclerc@example.com',   '$argon2id$v=19$m=65536,p=4,t=3$u8PnPfbgQxCMoL5zfeTBwQ$vxk8hG8H2frVWugvqlHWyrcb+JlqUn7WO6dm7WO7GMM',  '1985-04-30', 'client', '2023-06-15T11:45:00Z', '2023-06-15T11:45:00Z'),
+  (5,  'Moreau',   'Emma',      'emma.moreau@example.com',     '$argon2id$v=19$m=65536,p=4,t=3$u8PnPfbgQxCMoL5zfeTBwQ$vxk8hG8H2frVWugvqlHWyrcb+JlqUn7WO6dm7WO7GMM',  '1993-09-17', 'client', '2023-07-01T08:00:00Z', '2023-07-01T08:00:00Z'),
+  (6,  'Petit',    'François',  'francois.petit@example.com',  '$argon2id$v=19$m=65536,p=4,t=3$u8PnPfbgQxCMoL5zfeTBwQ$vxk8hG8H2frVWugvqlHWyrcb+JlqUn7WO6dm7WO7GMM',  '1980-12-03', 'client', '2023-07-10T16:20:00Z', '2023-07-10T16:20:00Z'),
+  (7,  'Simon',    'Gabrielle', 'gabrielle.simon@example.com', '$argon2id$v=19$m=65536,p=4,t=3$u8PnPfbgQxCMoL5zfeTBwQ$vxk8hG8H2frVWugvqlHWyrcb+JlqUn7WO6dm7WO7GMM',  '1991-06-25', 'client', '2023-07-15T13:10:00Z', '2023-07-15T13:10:00Z'),
+  (8,  'Lambert',  'Hugo',      'hugo.lambert@example.com',    '$argon2id$v=19$m=65536,p=4,t=3$u8PnPfbgQxCMoL5zfeTBwQ$vxk8hG8H2frVWugvqlHWyrcb+JlqUn7WO6dm7WO7GMM',  '1987-02-14', 'client', '2023-08-01T10:30:00Z', '2023-08-01T10:30:00Z'),
+  (9,  'Roux',     'Isabelle',  'isabelle.roux@example.com',   '$argon2id$v=19$m=65536,p=4,t=3$u8PnPfbgQxCMoL5zfeTBwQ$vxk8hG8H2frVWugvqlHWyrcb+JlqUn7WO6dm7WO7GMM',  '1994-08-19', 'client', '2023-08-10T15:00:00Z', '2023-08-10T15:00:00Z'),
+  (10, 'Girard',   'Julien',    'julien.girard@example.com',   '$argon2id$v=19$m=65536,p=4,t=3$u8PnPfbgQxCMoL5zfeTBwQ$vxk8hG8H2frVWugvqlHWyrcb+JlqUn7WO6dm7WO7GMM',  '1989-01-07', 'client', '2023-09-01T12:00:00Z', '2023-09-01T12:00:00Z'),
+  (11, 'Lefebvre', 'Karine',    'karine.lefebvre@example.com', '$argon2id$v=19$m=65536,p=4,t=3$u8PnPfbgQxCMoL5zfeTBwQ$vxk8hG8H2frVWugvqlHWyrcb+JlqUn7WO6dm7WO7GMM',  '1996-05-12', 'client', '2023-09-15T09:45:00Z', '2023-09-15T09:45:00Z'),
+  (12, 'Morin',    'Laurent',   'laurent.morin@example.com',   '$argon2id$v=19$m=65536,p=4,t=3$u8PnPfbgQxCMoL5zfeTBwQ$vxk8hG8H2frVWugvqlHWyrcb+JlqUn7WO6dm7WO7GMM',  '1983-10-28', 'client', '2023-10-01T17:30:00Z', '2023-10-01T17:30:00Z'),
+  (13, 'Garnier',  'Marie',     'marie.garnier@example.com',   '$argon2id$v=19$m=65536,p=4,t=3$u8PnPfbgQxCMoL5zfeTBwQ$vxk8hG8H2frVWugvqlHWyrcb+JlqUn7WO6dm7WO7GMM',  '1992-07-04', 'admin',  '2023-10-15T11:00:00Z', '2023-10-15T11:00:00Z');
 
 INSERT INTO brewery (id, name, description, country, city, website) VALUES
   (1,  'Brasserie de Chimay',              'Brasserie trappiste belge fondée en 1862 par les moines cisterciens de l''abbaye Notre-Dame de Scourmont. Reconnue mondialement pour ses bières de caractère brassées selon la tradition trappiste.',                                                          'Belgique',    'Chimay',                  'https://www.chimay.com'),

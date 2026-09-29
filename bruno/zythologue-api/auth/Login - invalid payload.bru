@@ -1,0 +1,28 @@
+meta {
+  name: Login - invalid payload
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{baseUrl}}/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "pas-un-email",
+    "password": ""
+  }
+}
+
+assert {
+  res.status: eq 400
+  res.body.errors.fieldErrors.email: isDefined
+  res.body.errors.fieldErrors.password: isDefined
+}
+
+docs {
+  Rejeté par Zod avant d'atteindre le service : 400, pas 401.
+}

@@ -8,6 +8,8 @@ API REST de gestion de bières, développée dans le cadre du brief "Zythologue"
 - **Express** pour le serveur HTTP
 - **PostgreSQL** avec le driver **pg**, en requêtes SQL natives (pas d'ORM)
 - **Zod** pour la validation des entrées
+- **argon2** (argon2id) pour le hachage des mots de passe
+- **jsonwebtoken** pour la preuve d'identification (JWT transmis en cookie `httpOnly`)
 
 L'architecture est volontairement écrite en **programmation orientée objet** (classes `Repository` / `Service` / `Controller` par entité), un choix fait pour s'exercer sur ce paradigme plutôt qu'une nécessité technique du projet.
 
@@ -24,7 +26,15 @@ Chaque route suit la même chaîne de responsabilité :
    POSTGRES_PASSWORD=...
    POSTGRES_DB=...
    POSTGRES_PORT=5432
+
+   JWT_SECRET=...
+   NODE_ENV=development
    ```
+   - `JWT_SECRET` est **obligatoire** : l'API refuse de démarrer sans. Générer une valeur aléatoire avec :
+     ```
+     node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+     ```
+   - `NODE_ENV` vaut `development` par défaut. En `production`, le cookie d'authentification reçoit l'attribut `Secure` (envoyé uniquement en HTTPS).
 2. Démarrer l'application et la base de données :
    ```
    npm run dev
@@ -421,6 +431,71 @@ Supprime une brasserie par son identifiant.
 | 204 | Brasserie supprimée | (vide) |
 | 400 | `id` non conforme | `{ "message": "L'identifiant n'est pas conforme" }` |
 | 404 | Aucune brasserie avec cet id | `{ "message": "Brasserie non trouvée" }` |
+
+---
+
+## Authentification
+
+Les diagrammes de séquence de l'inscription et de la connexion sont dans le dossier [`UML/`](UML/).
+
+### POST /api/v1/auth/register
+
+Crée un compte utilisateur. Le mot de passe est haché (argon2id) avant stockage et n'est jamais renvoyé.
+
+**Body attendu** (toute clé non listée, par exemple `role`, est ignorée : un compte est toujours créé avec le rôle `client`)
+
+| Champ | Type | Obligatoire | Règles de validation |
+|---|---|---|---|
+| `lastName` | string | oui | non vide (après trim), 100 caractères max |
+| `firstName` | string | oui | non vide (après trim), 100 caractères max |
+| `email` | string | oui | email valide, 255 caractères max, converti en minuscules, doit être unique en base |
+| `birthDate` | string | oui | date `YYYY-MM-DD`, au moins 18 ans, postérieure au 1900-01-01 |
+| `password` | string | oui | 8 à 255 caractères, au moins une minuscule, une majuscule, un chiffre et un caractère spécial |
+
+**Exemple de requête**
+
+```json
+{
+  "lastName": "Durand",
+  "firstName": "Jean",
+  "email": "jean.durand@example.com",
+  "birthDate": "1995-06-15",
+  "password": "Motdepasse123!"
+}
+```
+
+**Réponses**
+
+| Code | Cas | Corps |
+|---|---|---|
+| 201 | Compte créé | `{ id, lastName, firstName, email, birthDate, role, createdAt }` |
+| 400 | Body invalide (champ manquant, email invalide, mineur, mot de passe faible) | `{ "message": "Données invalides", "errors": {...} }` |
+| 409 | Un compte existe déjà avec cet email | `{ "message": "Un compte existe déjà avec cet email" }` |
+
+---
+
+### POST /api/v1/auth/login
+
+Identifie un utilisateur par email et mot de passe. En cas de succès, la preuve d'identification (JWT) est déposée dans un cookie ; elle n'apparaît **jamais** dans le body.
+
+**Body attendu**
+
+| Champ | Type | Obligatoire | Règles de validation |
+|---|---|---|---|
+| `email` | string | oui | email valide, converti en minuscules |
+| `password` | string | oui | 1 à 255 caractères |
+
+**Réponses**
+
+| Code | Cas | Corps |
+|---|---|---|
+| 200 | Identification réussie | `{ "message": "Connexion réussie" }` + en-tête `Set-Cookie` |
+| 400 | Body invalide | `{ "message": "Données invalides", "errors": {...} }` |
+| 401 | Email inconnu **ou** mot de passe incorrect (message identique, pour ne pas révéler l'existence d'un compte) | `{ "message": "Email ou mot de passe incorrect" }` |
+
+**Cookie** : `zythologue_auth=<JWT>; HttpOnly; SameSite=Strict; Max-Age=3600` (+ `Secure` si `NODE_ENV=production`)
+
+**JWT** : signé en HS256 avec `JWT_SECRET`, valable 1 h. Payload : `sub` (id de l'utilisateur), `role`, `iat`, `exp`.
 
 ---
 

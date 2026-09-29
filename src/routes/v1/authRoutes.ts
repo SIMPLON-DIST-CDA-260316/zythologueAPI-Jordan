@@ -3,7 +3,7 @@ import { AuthController } from "../../controllers/authController.ts";
 import { pool } from "../../db.ts";
 import { validate } from "../../middlewares/validate.ts";
 import { AuthRepository } from "../../repositories/authRepository.ts";
-import { registerSchema } from "../../schemas/authSchema.ts";
+import { loginSchema, registerSchema } from "../../schemas/authSchema.ts";
 import { AuthService } from "../../services/authService.ts";
 
 const authRepository = new AuthRepository(pool);
@@ -17,5 +17,7 @@ router.post(
   validate(registerSchema, "body"),
   authController.register,
 );
+
+router.post("/login", validate(loginSchema, "body"), authController.login);
 
 export default router;

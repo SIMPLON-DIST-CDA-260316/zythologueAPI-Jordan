@@ -1,0 +1,37 @@
+meta {
+  name: Login
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "jordan@test.com",
+    "password": "Motdepasse123!"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.token: isUndefined
+}
+
+tests {
+  test("cookie zythologue_auth httpOnly + SameSite=Strict", () => {
+    const cookie = String(res.getHeader("set-cookie"));
+    expect(cookie).to.match(/^zythologue_auth=eyJ/);
+    expect(cookie).to.include("HttpOnly");
+    expect(cookie).to.include("SameSite=Strict");
+  });
+}
+
+docs {
+  User du seed (hash argon2 de "Motdepasse123!").
+  Le JWT doit arriver uniquement dans un cookie httpOnly, jamais dans le body.
+}

@@ -1,6 +1,6 @@
 import { DatabaseError, type Pool } from "pg";
 import { ConflictError } from "../errors/httpError.ts";
-import { User, type UserRow } from "../models/user.ts";
+import { User, type UserCredentials, type UserRow } from "../models/user.ts";
 import type { RegisterInput } from "../schemas/authSchema.ts";
 
 // birthdate::text : évite le décalage de fuseau de la conversion DATE → Date
@@ -35,5 +35,13 @@ export class AuthRepository {
       }
       throw error;
     }
+  }
+
+  async findByEmail(email: string): Promise<UserCredentials | null> {
+    const result = await this.pool.query<UserCredentials>(
+      `SELECT id, role, password AS "passwordHash" FROM "user" WHERE email = $1`,
+      [email],
+    );
+    return result.rows[0] ?? null;
   }
 }

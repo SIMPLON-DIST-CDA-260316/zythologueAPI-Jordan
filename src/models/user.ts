@@ -47,3 +47,7 @@ export class User {
     );
   }
 }
+
+export type UserCredentials = Pick<UserRow, "id" | "role"> & {
+  passwordHash: string;
+};

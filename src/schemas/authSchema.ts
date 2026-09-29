@@ -43,7 +43,14 @@ export const registerSchema = z.object({
   password: z
     .string("Ce champ doit être une chaîne de caractères")
     .min(8, "Le mot de passe doit contenir au moins 8 caractères")
-    .max(255),
+    .max(255)
+    .regex(/\p{Ll}/u, "Le mot de passe doit contenir au moins une minuscule")
+    .regex(/\p{Lu}/u, "Le mot de passe doit contenir au moins une majuscule")
+    .regex(/\d/, "Le mot de passe doit contenir au moins un chiffre")
+    .regex(
+      /[^\p{L}\p{N}]/u,
+      "Le mot de passe doit contenir au moins un caractère spécial",
+    ),
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;

@@ -43,3 +43,9 @@ export class UnsupportedMediaTypeError extends HttpError {
     super(415, message);
   }
 }
+
+export class UnauthorizedError extends HttpError {
+  constructor(message: string) {
+    super(401, message);
+  }
+}
