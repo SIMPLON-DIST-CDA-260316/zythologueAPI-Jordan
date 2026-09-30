@@ -10,6 +10,7 @@ API REST de gestion de bières, développée dans le cadre du brief "Zythologue"
 - **Zod** pour la validation des entrées
 - **argon2** (argon2id) pour le hachage des mots de passe
 - **jsonwebtoken** pour la preuve d'identification (JWT transmis en cookie `httpOnly`)
+- **express-rate-limit** pour limiter les tentatives de connexion (anti force brute)
 
 L'architecture est volontairement écrite en **programmation orientée objet** (classes `Repository` / `Service` / `Controller` par entité), un choix fait pour s'exercer sur ce paradigme plutôt qu'une nécessité technique du projet.
 
@@ -491,7 +492,10 @@ Identifie un utilisateur par email et mot de passe. En cas de succès, la preuve
 |---|---|---|
 | 200 | Identification réussie | `{ "message": "Connexion réussie" }` + en-tête `Set-Cookie` |
 | 400 | Body invalide | `{ "message": "Données invalides", "errors": {...} }` |
-| 401 | Email inconnu **ou** mot de passe incorrect (message identique, pour ne pas révéler l'existence d'un compte) | `{ "message": "Email ou mot de passe incorrect" }` |
+| 400 | Email inconnu **ou** mot de passe incorrect (message identique, pour ne pas révéler l'existence d'un compte) | `{ "message": "Email ou mot de passe incorrect" }` |
+| 429 | Plus de 5 échecs en 15 min depuis la même IP | `{ "message": "Trop de tentatives de connexion, réessayez dans 15 minutes" }` |
+
+**Limitation des tentatives** : seuls les échecs (400) sont comptés, une connexion réussie ne consomme pas le quota. Une fois la limite atteinte, toute tentative depuis cette IP reçoit un 429 jusqu'à la fin de la fenêtre, y compris avec le bon mot de passe. Les en-têtes `RateLimit` et `Retry-After` indiquent le délai restant. Le compteur est gardé en mémoire : il est remis à zéro au redémarrage de l'API.
 
 **Cookie** : `zythologue_auth=<JWT>; HttpOnly; SameSite=Strict; Max-Age=3600` (+ `Secure` si `NODE_ENV=production`)
 

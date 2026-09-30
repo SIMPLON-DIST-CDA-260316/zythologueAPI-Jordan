@@ -255,6 +255,33 @@ const breweryPhotoExample = {
   breweryId: 1,
 };
 
+const userSchema = {
+  type: "object",
+  properties: {
+    id: { type: "integer", description: "Identifiant unique de l'utilisateur" },
+    lastName: { type: "string" },
+    firstName: { type: "string" },
+    email: { type: "string", format: "email" },
+    birthDate: { type: "string", format: "date" },
+    role: {
+      type: "string",
+      enum: ["client", "admin"],
+      description: "Toujours client à l'inscription",
+    },
+    createdAt: { type: "string", format: "date-time" },
+  },
+};
+
+const userExample = {
+  id: 21,
+  lastName: "Durand",
+  firstName: "Jean",
+  email: "jean.durand@example.com",
+  birthDate: "1995-06-15",
+  role: "client",
+  createdAt: "2026-09-30T12:34:56.000Z",
+};
+
 const breweryIdParam = {
   name: "id",
   in: "path",
@@ -404,6 +431,7 @@ export const openapiSpec = {
       BreweryPhoto: breweryPhotoSchema,
       Category: categorySchema,
       Ingredient: ingredientSchema,
+      User: userSchema,
       Error: errorSchema,
     },
   },
@@ -1799,6 +1827,188 @@ export const openapiSpec = {
                 example: {
                   message: "Paramètres de requête invalides",
                   errors: {},
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/auth/register": {
+      post: {
+        summary: "Crée un compte utilisateur",
+        description:
+          "Le mot de passe est haché (argon2id) avant stockage et n'est jamais renvoyé. Toute clé non listée (par exemple role) est ignorée : un compte est toujours créé avec le rôle client.",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  lastName: {
+                    type: "string",
+                    maxLength: 100,
+                    description: "Non vide (après trim)",
+                  },
+                  firstName: {
+                    type: "string",
+                    maxLength: 100,
+                    description: "Non vide (après trim)",
+                  },
+                  email: {
+                    type: "string",
+                    format: "email",
+                    maxLength: 255,
+                    description:
+                      "Converti en minuscules, doit être unique en base",
+                  },
+                  birthDate: {
+                    type: "string",
+                    format: "date",
+                    description:
+                      "YYYY-MM-DD, au moins 18 ans, postérieure au 1900-01-01",
+                  },
+                  password: {
+                    type: "string",
+                    minLength: 8,
+                    maxLength: 255,
+                    description:
+                      "Au moins une minuscule, une majuscule, un chiffre et un caractère spécial",
+                  },
+                },
+                required: [
+                  "lastName",
+                  "firstName",
+                  "email",
+                  "birthDate",
+                  "password",
+                ],
+              },
+              example: {
+                lastName: "Durand",
+                firstName: "Jean",
+                email: "jean.durand@example.com",
+                birthDate: "1995-06-15",
+                password: "Motdepasse123!",
+              },
+            },
+          },
+        },
+        responses: {
+          "201": {
+            description: "Compte créé",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/User" },
+                example: userExample,
+              },
+            },
+          },
+          "400": {
+            description:
+              "Body invalide (champ manquant, email invalide, mineur, mot de passe faible)",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: { message: "Données invalides", errors: {} },
+              },
+            },
+          },
+          "409": {
+            description: "Un compte existe déjà avec cet email",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: { message: "Un compte existe déjà avec cet email" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/auth/login": {
+      post: {
+        summary: "Identifie un utilisateur par email et mot de passe",
+        description:
+          "En cas de succès, le JWT (HS256, valable 1 h, payload sub + role) est déposé dans le cookie httpOnly zythologue_auth ; il n'apparaît jamais dans le body. Limité à 5 échecs par IP sur 15 minutes (les connexions réussies ne sont pas comptées).",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  email: {
+                    type: "string",
+                    format: "email",
+                    description: "Converti en minuscules",
+                  },
+                  password: { type: "string", minLength: 1, maxLength: 255 },
+                },
+                required: ["email", "password"],
+              },
+              example: {
+                email: "jean.durand@example.com",
+                password: "Motdepasse123!",
+              },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Identification réussie",
+            headers: {
+              "Set-Cookie": {
+                description:
+                  "zythologue_auth=<JWT>; HttpOnly; SameSite=Strict; Max-Age=3600 (+ Secure si NODE_ENV=production)",
+                schema: { type: "string" },
+              },
+            },
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: { message: { type: "string" } },
+                },
+                example: { message: "Connexion réussie" },
+              },
+            },
+          },
+          "400": {
+            description:
+              "Body invalide, ou email inconnu / mot de passe incorrect (message identique dans ces deux cas, pour ne pas révéler l'existence d'un compte)",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                examples: {
+                  invalidBody: {
+                    summary: "Body invalide",
+                    value: { message: "Données invalides", errors: {} },
+                  },
+                  invalidCredentials: {
+                    summary: "Identifiants incorrects",
+                    value: { message: "Email ou mot de passe incorrect" },
+                  },
+                },
+              },
+            },
+          },
+          "429": {
+            description:
+              "Plus de 5 échecs en 15 minutes depuis la même IP. Les en-têtes RateLimit et Retry-After indiquent le délai restant.",
+            headers: {
+              "Retry-After": {
+                description: "Secondes avant de pouvoir réessayer",
+                schema: { type: "integer" },
+              },
+            },
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: {
+                  message:
+                    "Trop de tentatives de connexion, réessayez dans 15 minutes",
                 },
               },
             },
