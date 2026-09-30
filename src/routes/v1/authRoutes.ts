@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { AuthController } from "../../controllers/authController.ts";
 import { pool } from "../../db.ts";
+import { loginRateLimiter } from "../../middlewares/rateLimit.ts";
 import { validate } from "../../middlewares/validate.ts";
 import { AuthRepository } from "../../repositories/authRepository.ts";
 import { loginSchema, registerSchema } from "../../schemas/authSchema.ts";
@@ -18,6 +19,11 @@ router.post(
   authController.register,
 );
 
-router.post("/login", validate(loginSchema, "body"), authController.login);
+router.post(
+  "/login",
+  loginRateLimiter,
+  validate(loginSchema, "body"),
+  authController.login,
+);
 
 export default router;

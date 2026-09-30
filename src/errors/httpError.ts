@@ -49,3 +49,9 @@ export class UnauthorizedError extends HttpError {
     super(401, message);
   }
 }
+
+export class TooManyRequestsError extends HttpError {
+  constructor(message: string) {
+    super(429, message);
+  }
+}
