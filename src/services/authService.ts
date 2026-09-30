@@ -1,7 +1,7 @@
 import { hash, verify } from "argon2";
 import jwt from "jsonwebtoken";
 import { JWT_EXPIRES_IN_S, JWT_SECRET } from "../config/auth.ts";
-import { UnauthorizedError } from "../errors/httpError.ts";
+import { BadRequestError } from "../errors/httpError.ts";
 import type { User } from "../models/user.ts";
 import type { AuthRepository } from "../repositories/authRepository.ts";
 import type { LoginInput, RegisterInput } from "../schemas/authSchema.ts";
@@ -27,12 +27,12 @@ export class AuthService {
       // Protection attaque temporelle : la requête prend autant de temps
       // qu'un compte existe pour l'email ou non
       await verify(DUMMY_HASH, password);
-      throw new UnauthorizedError(INVALID_CREDENTIALS);
+      throw new BadRequestError(INVALID_CREDENTIALS);
     }
 
     const isValid = await verify(user.passwordHash, password);
     if (!isValid) {
-      throw new UnauthorizedError(INVALID_CREDENTIALS);
+      throw new BadRequestError(INVALID_CREDENTIALS);
     }
 
     return jwt.sign({ role: user.role }, JWT_SECRET, {
