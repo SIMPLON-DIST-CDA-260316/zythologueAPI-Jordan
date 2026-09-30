@@ -1,0 +1,25 @@
+meta {
+  name: Update review - wrong beer
+  type: http
+  seq: 10
+}
+
+patch {
+  url: {{baseUrl}}/beers/2/reviews/{{reviewId}}
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "grade": 2
+  }
+}
+
+assert {
+  res.status: eq 404
+}
+
+docs {
+  L'avis existe mais porte sur la bière 1 : l'URL doit correspondre.
+}

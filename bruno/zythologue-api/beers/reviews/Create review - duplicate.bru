@@ -1,0 +1,25 @@
+meta {
+  name: Create review - duplicate
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/beers/1/reviews
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "grade": 5
+  }
+}
+
+assert {
+  res.status: eq 409
+}
+
+docs {
+  Contrainte UNIQUE (user_id, beer_id) : un seul avis par personne et par bière.
+}

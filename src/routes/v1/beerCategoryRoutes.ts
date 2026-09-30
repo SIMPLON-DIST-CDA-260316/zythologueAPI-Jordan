@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { BeerCategoryController } from "../../controllers/beerCategoryController.ts";
 import { pool } from "../../db.ts";
+import { requireAdmin } from "../../middlewares/auth.ts";
 import { validate } from "../../middlewares/validate.ts";
 import { BeerCategoryRepository } from "../../repositories/beerCategoryRepository.ts";
 import { CategoryRepository } from "../../repositories/categoryRepository.ts";
@@ -17,19 +18,15 @@ const beerCategoryService = new BeerCategoryService(
   beerCategoryRepository,
   categoryRepository,
 );
-const beerCategoryController = new BeerCategoryController(
-  beerCategoryService,
-);
+const beerCategoryController = new BeerCategoryController(beerCategoryService);
 
 // mergeParams : indispensable, :id est déclaré par le routeur parent (beerRoutes).
 const router = Router({ mergeParams: true });
 
-// Quand l'auth sera en place, POST / DELETE recevront un middleware de rôle,
-// à insérer entre le validate(...) et le contrôleur.
-
 // Route pour associer une catégorie à une bière
 router.post(
   "/",
+  requireAdmin,
   validate(beerIdParamSchema, "params"),
   validate(createBeerCategorySchema, "body"),
   beerCategoryController.addOne,
@@ -38,6 +35,7 @@ router.post(
 // Route pour dissocier une catégorie d'une bière
 router.delete(
   "/:categoryId",
+  requireAdmin,
   validate(beerCategoryParamsSchema, "params"),
   beerCategoryController.deleteOneById,
 );

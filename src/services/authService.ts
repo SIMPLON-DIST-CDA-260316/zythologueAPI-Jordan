@@ -1,7 +1,7 @@
 import { hash, verify } from "argon2";
 import jwt from "jsonwebtoken";
 import { JWT_EXPIRES_IN_S, JWT_SECRET } from "../config/auth.ts";
-import { BadRequestError } from "../errors/httpError.ts";
+import { BadRequestError, UnauthorizedError } from "../errors/httpError.ts";
 import type { User } from "../models/user.ts";
 import type { AuthRepository } from "../repositories/authRepository.ts";
 import type { LoginInput, RegisterInput } from "../schemas/authSchema.ts";
@@ -40,5 +40,27 @@ export class AuthService {
       expiresIn: JWT_EXPIRES_IN_S,
       algorithm: "HS256",
     });
+  }
+
+  async authenticate(token: string | undefined): Promise<User> {
+    if (!token) {
+      throw new UnauthorizedError("Authentification requise");
+    }
+    let userId: number;
+    try {
+      const payload = jwt.verify(token, JWT_SECRET, {
+        algorithms: ["HS256"],
+      });
+      userId = Number(payload.sub);
+    } catch {
+      throw new UnauthorizedError("Session invalide ou expirée");
+    }
+    const user = Number.isInteger(userId)
+      ? await this.authRepository.findById(userId)
+      : null;
+    if (!user) {
+      throw new UnauthorizedError("Session invalide ou expirée");
+    }
+    return user;
   }
 }

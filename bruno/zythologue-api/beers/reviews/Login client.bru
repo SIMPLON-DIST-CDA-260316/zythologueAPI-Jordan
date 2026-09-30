@@ -1,0 +1,26 @@
+meta {
+  name: Login client
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "{{clientEmail}}",
+    "password": "{{seedPassword}}"
+  }
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Baptiste (client, id 2). Il n'a pas d'avis sur la bière 1 dans le seed.
+}

@@ -1,0 +1,27 @@
+meta {
+  name: Login admin
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{baseUrl}}/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "{{adminEmail}}",
+    "password": "{{seedPassword}}"
+  }
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Connecte Alice (admin du seed). Le cookie est gardé par Bruno pour
+  localhost : les requêtes suivantes sur {{baseUrl}} sont faites en admin.
+}

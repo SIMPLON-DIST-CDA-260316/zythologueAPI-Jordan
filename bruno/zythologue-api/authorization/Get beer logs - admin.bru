@@ -1,0 +1,15 @@
+meta {
+  name: Get beer logs - admin
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/beer-logs
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+}

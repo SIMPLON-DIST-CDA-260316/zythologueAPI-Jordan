@@ -1,0 +1,21 @@
+meta {
+  name: Create review - anonymous
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{anonBaseUrl}}/beers/1/reviews
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "grade": 8
+  }
+}
+
+assert {
+  res.status: eq 401
+}

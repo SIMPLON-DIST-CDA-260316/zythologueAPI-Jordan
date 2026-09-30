@@ -1,0 +1,15 @@
+meta {
+  name: Delete review - not author
+  type: http
+  seq: 12
+}
+
+delete {
+  url: {{baseUrl}}/beers/1/reviews/1
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 403
+}

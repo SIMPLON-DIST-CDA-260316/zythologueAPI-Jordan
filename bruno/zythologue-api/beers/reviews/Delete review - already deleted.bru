@@ -1,0 +1,15 @@
+meta {
+  name: Delete review - already deleted
+  type: http
+  seq: 16
+}
+
+delete {
+  url: {{baseUrl}}/beers/1/reviews/{{reviewId}}
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 404
+}

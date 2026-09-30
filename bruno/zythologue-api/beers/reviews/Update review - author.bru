@@ -1,0 +1,27 @@
+meta {
+  name: Update review - author
+  type: http
+  seq: 9
+}
+
+patch {
+  url: {{baseUrl}}/beers/1/reviews/{{reviewId}}
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "comment": null
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.comment: isNull
+  res.body.grade: eq 8
+}
+
+docs {
+  PATCH partiel : comment null efface le commentaire, la note est conservée.
+}

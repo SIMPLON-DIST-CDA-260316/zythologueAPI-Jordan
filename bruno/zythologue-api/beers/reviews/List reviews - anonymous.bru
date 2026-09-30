@@ -1,0 +1,20 @@
+meta {
+  name: List reviews - anonymous
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{anonBaseUrl}}/beers/1/reviews
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body: isArray
+}
+
+docs {
+  Lecture publique : pas besoin d'être connecté.
+}

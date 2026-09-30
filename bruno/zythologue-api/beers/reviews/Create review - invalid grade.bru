@@ -1,0 +1,22 @@
+meta {
+  name: Create review - invalid grade
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/beers/2/reviews
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "grade": 11
+  }
+}
+
+assert {
+  res.status: eq 400
+  res.body.errors.fieldErrors.grade: isDefined
+}

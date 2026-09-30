@@ -1,0 +1,26 @@
+meta {
+  name: Update review - not author
+  type: http
+  seq: 8
+}
+
+patch {
+  url: {{baseUrl}}/beers/1/reviews/1
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "grade": 1
+  }
+}
+
+assert {
+  res.status: eq 403
+}
+
+docs {
+  L'avis n°1 appartient à Clara (id 3). Baptiste est connecté mais n'en est
+  pas l'auteur : le service refuse.
+}

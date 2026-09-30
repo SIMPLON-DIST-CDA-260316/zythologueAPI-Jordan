@@ -1,0 +1,21 @@
+meta {
+  name: Create review - unknown beer
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/beers/99999/reviews
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "grade": 5
+  }
+}
+
+assert {
+  res.status: eq 404
+}

@@ -1,0 +1,38 @@
+meta {
+  name: Create review - client
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/beers/1/reviews
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "grade": 8,
+    "comment": "Belle brune, un peu sucrée",
+    "userId": 99
+  }
+}
+
+script:post-response {
+  bru.setVar("reviewId", res.body.id);
+}
+
+assert {
+  res.status: eq 201
+  res.body.userId: eq 2
+  res.body.beerId: eq 1
+}
+
+docs {
+  Test clé de l'étape 3 : le client tente de se faire passer pour l'user 99.
+  Zod supprime la clé, l'auteur enregistré est celui du jeton (id 2).
+
+  Si ce test renvoie 409, un run précédent s'est arrêté avant "Delete review
+  - admin moderation" : supprimer l'avis de Baptiste sur la bière 1, ou
+  relancer npm run db:seed.
+}

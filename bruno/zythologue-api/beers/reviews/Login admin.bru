@@ -1,0 +1,22 @@
+meta {
+  name: Login admin
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{baseUrl}}/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "{{adminEmail}}",
+    "password": "{{seedPassword}}"
+  }
+}
+
+assert {
+  res.status: eq 200
+}

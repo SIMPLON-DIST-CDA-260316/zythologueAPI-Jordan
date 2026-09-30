@@ -1,0 +1,23 @@
+meta {
+  name: Me
+  type: http
+  seq: 12
+}
+
+get {
+  url: {{baseUrl}}/auth/me
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body.id: eq 2
+  res.body.role: eq client
+  res.body.password: isUndefined
+}
+
+docs {
+  À lancer après "Login client". Le middleware authenticate lit le cookie,
+  vérifie le JWT, recharge l'utilisateur en base et le passe au controller.
+}

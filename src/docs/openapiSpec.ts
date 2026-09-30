@@ -299,6 +299,83 @@ const errorSchema = {
   required: ["message"],
 };
 
+// Le JWT voyage dans le cookie httpOnly posé par POST /auth/login. Swagger UI
+// est servi sur la même origine que l'API : après un login via « Try it out »,
+// le navigateur renvoie le cookie tout seul sur les routes protégées.
+const cookieAuthSecurity = [{ cookieAuth: [] }];
+
+const unauthorizedResponse = {
+  description:
+    "Non connecté (pas de cookie), jeton invalide ou expiré, ou compte supprimé",
+  content: {
+    "application/json": {
+      schema: { $ref: "#/components/schemas/Error" },
+      examples: {
+        missingToken: {
+          summary: "Pas de cookie",
+          value: { message: "Authentification requise" },
+        },
+        invalidToken: {
+          summary: "Jeton invalide ou expiré",
+          value: { message: "Session invalide ou expirée" },
+        },
+      },
+    },
+  },
+};
+
+const adminForbiddenResponse = {
+  description: "Connecté, mais le rôle n'est pas admin",
+  content: {
+    "application/json": {
+      schema: { $ref: "#/components/schemas/Error" },
+      example: { message: "Accès réservé aux administrateurs" },
+    },
+  },
+};
+
+const beerReviewSchema = {
+  type: "object",
+  properties: {
+    id: { type: "integer", description: "Identifiant unique de l'avis" },
+    grade: { type: "integer", minimum: 1, maximum: 10 },
+    comment: { type: "string", nullable: true },
+    createdAt: { type: "string", format: "date-time" },
+    userId: {
+      type: "integer",
+      description: "Auteur de l'avis : toujours l'utilisateur du jeton",
+    },
+    beerId: { type: "integer", description: "Bière notée" },
+  },
+};
+
+const beerReviewExample = {
+  id: 26,
+  grade: 8,
+  comment: "Belle brune, un peu sucrée",
+  createdAt: "2026-09-30T12:55:52.881Z",
+  userId: 2,
+  beerId: 1,
+};
+
+const reviewIdParam = {
+  name: "reviewId",
+  in: "path",
+  required: true,
+  description: "Identifiant de l'avis (entier positif)",
+  schema: { type: "integer", minimum: 1 },
+};
+
+const reviewNotFoundResponse = {
+  description: "Avis inexistant, ou rattaché à une autre bière que {id}",
+  content: {
+    "application/json": {
+      schema: { $ref: "#/components/schemas/Error" },
+      example: { message: "Avis non trouvé" },
+    },
+  },
+};
+
 const idParam = {
   name: "id",
   in: "path",
@@ -432,7 +509,17 @@ export const openapiSpec = {
       Category: categorySchema,
       Ingredient: ingredientSchema,
       User: userSchema,
+      BeerReview: beerReviewSchema,
       Error: errorSchema,
+    },
+    securitySchemes: {
+      cookieAuth: {
+        type: "apiKey",
+        in: "cookie",
+        name: "zythologue_auth",
+        description:
+          "JWT déposé par POST /auth/login dans un cookie httpOnly. Se connecter via /auth/login dans Swagger UI suffit : le navigateur renvoie ensuite le cookie automatiquement.",
+      },
     },
   },
   paths: {
@@ -532,6 +619,7 @@ export const openapiSpec = {
         },
       },
       post: {
+        security: cookieAuthSecurity,
         summary: "Crée une nouvelle bière",
         requestBody: {
           required: true,
@@ -583,6 +671,8 @@ export const openapiSpec = {
           },
         },
         responses: {
+          "401": unauthorizedResponse,
+          "403": adminForbiddenResponse,
           "201": {
             description: "Bière créée",
             content: {
@@ -626,6 +716,7 @@ export const openapiSpec = {
         },
       },
       patch: {
+        security: cookieAuthSecurity,
         summary:
           "Modifie partiellement une bière existante (seuls les champs envoyés sont modifiés)",
         parameters: [idParam],
@@ -650,6 +741,8 @@ export const openapiSpec = {
           },
         },
         responses: {
+          "401": unauthorizedResponse,
+          "403": adminForbiddenResponse,
           "200": {
             description: "Bière mise à jour",
             content: {
@@ -674,9 +767,12 @@ export const openapiSpec = {
         },
       },
       delete: {
+        security: cookieAuthSecurity,
         summary: "Supprime une bière par son identifiant",
         parameters: [idParam],
         responses: {
+          "401": unauthorizedResponse,
+          "403": adminForbiddenResponse,
           "204": { description: "Bière supprimée" },
           "400": idInvalidResponse,
           "404": beerNotFoundResponse,
@@ -685,6 +781,7 @@ export const openapiSpec = {
     },
     "/beers/{id}/categories": {
       post: {
+        security: cookieAuthSecurity,
         summary: "Associe une catégorie à une bière",
         parameters: [idParam],
         requestBody: {
@@ -703,6 +800,8 @@ export const openapiSpec = {
           },
         },
         responses: {
+          "401": unauthorizedResponse,
+          "403": adminForbiddenResponse,
           "201": {
             description: "Catégorie associée (renvoie la catégorie)",
             content: {
@@ -746,6 +845,7 @@ export const openapiSpec = {
     },
     "/beers/{id}/categories/{categoryId}": {
       delete: {
+        security: cookieAuthSecurity,
         summary: "Dissocie une catégorie d'une bière",
         parameters: [
           idParam,
@@ -758,6 +858,8 @@ export const openapiSpec = {
           },
         ],
         responses: {
+          "401": unauthorizedResponse,
+          "403": adminForbiddenResponse,
           "204": { description: "Catégorie dissociée" },
           "400": idInvalidResponse,
           "404": {
@@ -774,6 +876,7 @@ export const openapiSpec = {
     },
     "/beers/{id}/ingredients": {
       post: {
+        security: cookieAuthSecurity,
         summary: "Associe un ingrédient à une bière",
         parameters: [idParam],
         requestBody: {
@@ -792,6 +895,8 @@ export const openapiSpec = {
           },
         },
         responses: {
+          "401": unauthorizedResponse,
+          "403": adminForbiddenResponse,
           "201": {
             description: "Ingrédient associé (renvoie l'ingrédient)",
             content: {
@@ -835,6 +940,7 @@ export const openapiSpec = {
     },
     "/beers/{id}/ingredients/{ingredientId}": {
       delete: {
+        security: cookieAuthSecurity,
         summary: "Dissocie un ingrédient d'une bière",
         parameters: [
           idParam,
@@ -847,6 +953,8 @@ export const openapiSpec = {
           },
         ],
         responses: {
+          "401": unauthorizedResponse,
+          "403": adminForbiddenResponse,
           "204": { description: "Ingrédient dissocié" },
           "400": idInvalidResponse,
           "404": {
@@ -885,6 +993,7 @@ export const openapiSpec = {
         },
       },
       post: {
+        security: cookieAuthSecurity,
         summary: "Envoie une photo pour une bière",
         description:
           "Le fichier est reçu en mémoire par Multer (5 Mo max), puis décodé par Sharp : un fichier qui n'est pas réellement une image est rejeté, quel que soit son nom ou son Content-Type déclaré. L'image acceptée est ré-encodée en WebP en deux variantes (1200 px et vignette 320 x 320), ses métadonnées EXIF sont supprimées et son nom est régénéré côté serveur.",
@@ -908,6 +1017,8 @@ export const openapiSpec = {
           },
         },
         responses: {
+          "401": unauthorizedResponse,
+          "403": adminForbiddenResponse,
           "201": {
             description: "Photo enregistrée",
             content: {
@@ -965,6 +1076,7 @@ export const openapiSpec = {
     },
     "/beers/{id}/photos/{photoId}": {
       delete: {
+        security: cookieAuthSecurity,
         summary: "Supprime une photo d'une bière",
         description:
           "Supprime la ligne puis, uniquement si l'URL est une URL générée par l'API, les fichiers correspondants sur disque. Une photo pointant vers une URL externe est retirée de la base sans suppression de fichier.",
@@ -979,6 +1091,8 @@ export const openapiSpec = {
           },
         ],
         responses: {
+          "401": unauthorizedResponse,
+          "403": adminForbiddenResponse,
           "204": { description: "Photo supprimée" },
           "400": idInvalidResponse,
           "404": {
@@ -990,6 +1104,169 @@ export const openapiSpec = {
               },
             },
           },
+        },
+      },
+    },
+    "/beers/{id}/reviews": {
+      get: {
+        summary: "Liste les avis d'une bière (public)",
+        parameters: [idParam],
+        responses: {
+          "200": {
+            description: "Succès",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "array",
+                  items: { $ref: "#/components/schemas/BeerReview" },
+                },
+                example: [beerReviewExample],
+              },
+            },
+          },
+          "400": idInvalidResponse,
+          "404": beerNotFoundResponse,
+        },
+      },
+      post: {
+        summary: "Ajoute l'avis de l'utilisateur connecté sur une bière",
+        description:
+          "L'auteur (userId) est toujours l'utilisateur du jeton : une clé userId envoyée dans le body est ignorée. Un seul avis par personne et par bière.",
+        security: cookieAuthSecurity,
+        parameters: [idParam],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  grade: { type: "integer", minimum: 1, maximum: 10 },
+                  comment: {
+                    type: "string",
+                    nullable: true,
+                    description: "Non vide (après trim) si fourni",
+                  },
+                },
+                required: ["grade"],
+              },
+              example: { grade: 8, comment: "Belle brune, un peu sucrée" },
+            },
+          },
+        },
+        responses: {
+          "201": {
+            description: "Avis créé",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/BeerReview" },
+                example: beerReviewExample,
+              },
+            },
+          },
+          "400": {
+            description: "Body invalide ou identifiant non conforme",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: { message: "Données invalides", errors: {} },
+              },
+            },
+          },
+          "401": unauthorizedResponse,
+          "404": beerNotFoundResponse,
+          "409": {
+            description: "L'utilisateur a déjà donné son avis sur cette bière",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: {
+                  message: "Vous avez déjà donné votre avis sur cette bière",
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/beers/{id}/reviews/{reviewId}": {
+      patch: {
+        summary: "Modifie partiellement son propre avis",
+        description:
+          "Réservé à l'auteur de l'avis, même un admin ne modifie pas l'avis d'un autre. Au moins un champ ; comment: null efface le commentaire.",
+        security: cookieAuthSecurity,
+        parameters: [idParam, reviewIdParam],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  grade: { type: "integer", minimum: 1, maximum: 10 },
+                  comment: { type: "string", nullable: true },
+                },
+              },
+              example: { comment: null },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Avis modifié",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/BeerReview" },
+                example: { ...beerReviewExample, comment: null },
+              },
+            },
+          },
+          "400": {
+            description: "Body vide ou invalide, ou identifiant non conforme",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: { message: "Données invalides", errors: {} },
+              },
+            },
+          },
+          "401": unauthorizedResponse,
+          "403": {
+            description: "L'avis appartient à quelqu'un d'autre",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: {
+                  message: "Vous ne pouvez modifier que vos propres avis",
+                },
+              },
+            },
+          },
+          "404": reviewNotFoundResponse,
+        },
+      },
+      delete: {
+        summary: "Supprime un avis (auteur ou admin)",
+        description:
+          "L'auteur peut supprimer son avis ; un admin peut supprimer n'importe quel avis (modération).",
+        security: cookieAuthSecurity,
+        parameters: [idParam, reviewIdParam],
+        responses: {
+          "204": { description: "Avis supprimé" },
+          "400": idInvalidResponse,
+          "401": unauthorizedResponse,
+          "403": {
+            description: "Ni auteur de l'avis, ni admin",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: {
+                  message: "Vous ne pouvez supprimer que vos propres avis",
+                },
+              },
+            },
+          },
+          "404": reviewNotFoundResponse,
         },
       },
     },
@@ -1084,6 +1361,7 @@ export const openapiSpec = {
         },
       },
       post: {
+        security: cookieAuthSecurity,
         summary: "Crée une nouvelle brasserie",
         requestBody: {
           required: true,
@@ -1124,6 +1402,8 @@ export const openapiSpec = {
           },
         },
         responses: {
+          "401": unauthorizedResponse,
+          "403": adminForbiddenResponse,
           "201": {
             description: "Brasserie créée (beerCount vaut 0)",
             content: {
@@ -1165,6 +1445,7 @@ export const openapiSpec = {
         },
       },
       patch: {
+        security: cookieAuthSecurity,
         summary:
           "Modifie partiellement une brasserie existante (seuls les champs envoyés sont modifiés)",
         parameters: [breweryIdParam],
@@ -1189,6 +1470,8 @@ export const openapiSpec = {
           },
         },
         responses: {
+          "401": unauthorizedResponse,
+          "403": adminForbiddenResponse,
           "200": {
             description: "Brasserie mise à jour",
             content: {
@@ -1212,11 +1495,14 @@ export const openapiSpec = {
         },
       },
       delete: {
+        security: cookieAuthSecurity,
         summary: "Supprime une brasserie par son identifiant",
         description:
           "Suppression en cascade : les bières de la brasserie, leurs photos, ainsi que les photos, avis et favoris de la brasserie sont supprimés avec elle. Les fichiers image correspondants sont effacés du disque.",
         parameters: [breweryIdParam],
         responses: {
+          "401": unauthorizedResponse,
+          "403": adminForbiddenResponse,
           "204": { description: "Brasserie supprimée" },
           "400": idInvalidResponse,
           "404": breweryNotFoundResponse,
@@ -1245,6 +1531,7 @@ export const openapiSpec = {
         },
       },
       post: {
+        security: cookieAuthSecurity,
         summary: "Envoie une photo pour une brasserie",
         description:
           "Même pipeline que les photos de bières : Multer reçoit le fichier en mémoire (5 Mo max), Sharp le décode pour vérifier qu'il s'agit réellement d'une image, puis le ré-encode en WebP en deux variantes (1200 px et vignette 320 x 320). Les métadonnées EXIF sont supprimées et le nom est régénéré côté serveur.",
@@ -1268,6 +1555,8 @@ export const openapiSpec = {
           },
         },
         responses: {
+          "401": unauthorizedResponse,
+          "403": adminForbiddenResponse,
           "201": {
             description: "Photo enregistrée",
             content: {
@@ -1325,6 +1614,7 @@ export const openapiSpec = {
     },
     "/breweries/{id}/photos/{photoId}": {
       delete: {
+        security: cookieAuthSecurity,
         summary: "Supprime une photo d'une brasserie",
         description:
           "Supprime la ligne puis, uniquement si l'URL est une URL générée par l'API, les fichiers correspondants sur disque. Une photo pointant vers une URL externe est retirée de la base sans suppression de fichier.",
@@ -1339,6 +1629,8 @@ export const openapiSpec = {
           },
         ],
         responses: {
+          "401": unauthorizedResponse,
+          "403": adminForbiddenResponse,
           "204": { description: "Photo supprimée" },
           "400": idInvalidResponse,
           "404": {
@@ -1432,6 +1724,7 @@ export const openapiSpec = {
         },
       },
       post: {
+        security: cookieAuthSecurity,
         summary: "Crée une nouvelle catégorie",
         requestBody: {
           required: true,
@@ -1461,6 +1754,8 @@ export const openapiSpec = {
           },
         },
         responses: {
+          "401": unauthorizedResponse,
+          "403": adminForbiddenResponse,
           "201": {
             description: "Catégorie créée",
             content: {
@@ -1502,6 +1797,7 @@ export const openapiSpec = {
         },
       },
       patch: {
+        security: cookieAuthSecurity,
         summary:
           "Modifie partiellement une catégorie existante (seuls les champs envoyés sont modifiés)",
         parameters: [categoryIdParam],
@@ -1522,6 +1818,8 @@ export const openapiSpec = {
           },
         },
         responses: {
+          "401": unauthorizedResponse,
+          "403": adminForbiddenResponse,
           "200": {
             description: "Catégorie mise à jour",
             content: {
@@ -1545,11 +1843,14 @@ export const openapiSpec = {
         },
       },
       delete: {
+        security: cookieAuthSecurity,
         summary: "Supprime une catégorie par son identifiant",
         description:
           "Suppression en cascade : les associations avec les bières (beer_category) sont supprimées avec elle. Aucune photo ni fichier associé, contrairement à brewery/beer.",
         parameters: [categoryIdParam],
         responses: {
+          "401": unauthorizedResponse,
+          "403": adminForbiddenResponse,
           "204": { description: "Catégorie supprimée" },
           "400": idInvalidResponse,
           "404": categoryNotFoundResponse,
@@ -1635,6 +1936,7 @@ export const openapiSpec = {
         },
       },
       post: {
+        security: cookieAuthSecurity,
         summary: "Crée un nouvel ingrédient",
         requestBody: {
           required: true,
@@ -1665,6 +1967,8 @@ export const openapiSpec = {
           },
         },
         responses: {
+          "401": unauthorizedResponse,
+          "403": adminForbiddenResponse,
           "201": {
             description: "Ingrédient créé",
             content: {
@@ -1706,6 +2010,7 @@ export const openapiSpec = {
         },
       },
       patch: {
+        security: cookieAuthSecurity,
         summary:
           "Modifie partiellement un ingrédient existant (seuls les champs envoyés sont modifiés)",
         parameters: [ingredientIdParam],
@@ -1727,6 +2032,8 @@ export const openapiSpec = {
           },
         },
         responses: {
+          "401": unauthorizedResponse,
+          "403": adminForbiddenResponse,
           "200": {
             description: "Ingrédient mis à jour",
             content: {
@@ -1750,11 +2057,14 @@ export const openapiSpec = {
         },
       },
       delete: {
+        security: cookieAuthSecurity,
         summary: "Supprime un ingrédient par son identifiant",
         description:
           "Suppression en cascade : les associations avec les bières (beer_ingredient) sont supprimées avec lui. Aucune photo ni fichier associé.",
         parameters: [ingredientIdParam],
         responses: {
+          "401": unauthorizedResponse,
+          "403": adminForbiddenResponse,
           "204": { description: "Ingrédient supprimé" },
           "400": idInvalidResponse,
           "404": ingredientNotFoundResponse,
@@ -1763,6 +2073,7 @@ export const openapiSpec = {
     },
     "/beer-logs": {
       get: {
+        security: cookieAuthSecurity,
         summary:
           "Liste paginée du journal des insertions de bières (alimenté automatiquement par un trigger PostgreSQL, lecture seule)",
         parameters: [
@@ -1792,6 +2103,8 @@ export const openapiSpec = {
           },
         ],
         responses: {
+          "401": unauthorizedResponse,
+          "403": adminForbiddenResponse,
           "200": {
             description: "Succès",
             content: {
@@ -2013,6 +2326,26 @@ export const openapiSpec = {
               },
             },
           },
+        },
+      },
+    },
+    "/auth/me": {
+      get: {
+        summary: "Renvoie l'utilisateur connecté",
+        description:
+          "Renvoie res.locals.user, déposé par le middleware authenticate (cookie lu, JWT vérifié, utilisateur rechargé en base).",
+        security: cookieAuthSecurity,
+        responses: {
+          "200": {
+            description: "Jeton valide",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/User" },
+                example: userExample,
+              },
+            },
+          },
+          "401": unauthorizedResponse,
         },
       },
     },

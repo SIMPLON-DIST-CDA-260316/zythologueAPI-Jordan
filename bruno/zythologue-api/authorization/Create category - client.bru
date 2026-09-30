@@ -1,0 +1,27 @@
+meta {
+  name: Create category - client
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/categories
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Catégorie interdite",
+    "description": "Ne doit pas être créée"
+  }
+}
+
+assert {
+  res.status: eq 403
+  res.body.message: eq Accès réservé aux administrateurs
+}
+
+docs {
+  Connecté mais client : 403 (on sait qui il est, il n'a pas le droit).
+}

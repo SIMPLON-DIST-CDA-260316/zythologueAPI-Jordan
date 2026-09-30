@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { BeerController } from "../../controllers/beerController.ts";
 import { pool } from "../../db.ts";
+import { requireAdmin } from "../../middlewares/auth.ts";
 import { validate } from "../../middlewares/validate.ts";
 import { BeerRepository } from "../../repositories/beerRepository.ts";
 import {
@@ -13,6 +14,7 @@ import { BeerService } from "../../services/beerService.ts";
 import beerCategoryRoutes from "./beerCategoryRoutes.ts";
 import beerIngredientRoutes from "./beerIngredientRoutes.ts";
 import beerPhotoRoutes from "./beerPhotoRoutes.ts";
+import beerReviewRoutes from "./beerReviewRoutes.ts";
 
 const beerRepository = new BeerRepository(pool);
 const beerService = new BeerService(beerRepository);
@@ -33,16 +35,23 @@ router.get(
 // Route pour supprimer une bière par son id
 router.delete(
   "/:id",
+  requireAdmin,
   validate(beerIdParamSchema, "params"),
   beerController.deleteOneById,
 );
 
 // Route pour ajouter une bière
-router.post("/", validate(createBeerSchema, "body"), beerController.addOne);
+router.post(
+  "/",
+  requireAdmin,
+  validate(createBeerSchema, "body"),
+  beerController.addOne,
+);
 
 // Route pour modifier partiellement une bière par son id
 router.patch(
   "/:id",
+  requireAdmin,
   validate(beerIdParamSchema, "params"),
   validate(patchBeerSchema, "body"),
   beerController.updateOneById,
@@ -58,5 +67,8 @@ router.use("/:id/categories", beerCategoryRoutes);
 // Sous-ressource : ingrédients associés à une bière (écriture seulement — la
 // lecture passe par le champ ingredients embarqué dans GET /beers/:id)
 router.use("/:id/ingredients", beerIngredientRoutes);
+
+// Sous-ressource : avis sur une bière
+router.use("/:id/reviews", beerReviewRoutes);
 
 export default router;

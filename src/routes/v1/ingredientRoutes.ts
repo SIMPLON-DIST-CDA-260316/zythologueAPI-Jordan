@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { IngredientController } from "../../controllers/ingredientController.ts";
 import { pool } from "../../db.ts";
+import { requireAdmin } from "../../middlewares/auth.ts";
 import { validate } from "../../middlewares/validate.ts";
 import { IngredientRepository } from "../../repositories/ingredientRepository.ts";
 import {
@@ -16,9 +17,6 @@ const ingredientService = new IngredientService(ingredientRepository);
 const ingredientController = new IngredientController(ingredientService);
 
 const router = Router();
-
-// Quand l'auth sera en place, POST / PATCH / DELETE recevront un middleware de
-// rôle, à insérer entre le validate(...) et le contrôleur.
 
 // Route racine de l'API ingredients : récupère tous les ingrédients
 router.get(
@@ -38,6 +36,7 @@ router.get(
 // Le ON DELETE CASCADE sur beer_ingredient s'occupe de désassocier les bières.
 router.delete(
   "/:id",
+  requireAdmin,
   validate(ingredientIdParamSchema, "params"),
   ingredientController.deleteOneById,
 );
@@ -45,6 +44,7 @@ router.delete(
 // Route pour ajouter un ingrédient
 router.post(
   "/",
+  requireAdmin,
   validate(createIngredientSchema, "body"),
   ingredientController.addOne,
 );
@@ -52,6 +52,7 @@ router.post(
 // Route pour modifier partiellement un ingrédient par son id
 router.patch(
   "/:id",
+  requireAdmin,
   validate(ingredientIdParamSchema, "params"),
   validate(patchIngredientSchema, "body"),
   ingredientController.updateOneById,

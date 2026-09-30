@@ -1,0 +1,22 @@
+meta {
+  name: Create category - anonymous
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{anonBaseUrl}}/categories
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Catégorie interdite",
+    "description": "Ne doit pas être créée"
+  }
+}
+
+assert {
+  res.status: eq 401
+}

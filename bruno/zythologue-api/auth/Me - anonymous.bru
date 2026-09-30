@@ -1,0 +1,21 @@
+meta {
+  name: Me - anonymous
+  type: http
+  seq: 13
+}
+
+get {
+  url: {{anonBaseUrl}}/auth/me
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 401
+  res.body.message: eq Authentification requise
+}
+
+docs {
+  anonBaseUrl pointe sur 127.0.0.1 : Bruno range ses cookies par domaine,
+  donc aucun cookie de localhost n'est envoyé. Requête anonyme garantie.
+}

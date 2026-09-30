@@ -1,0 +1,20 @@
+meta {
+  name: Delete review - admin moderation
+  type: http
+  seq: 15
+}
+
+delete {
+  url: {{baseUrl}}/beers/1/reviews/{{reviewId}}
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 204
+}
+
+docs {
+  Un admin peut supprimer n'importe quel avis (modération). Ce test nettoie
+  aussi l'avis créé par le scénario : la collection peut être relancée.
+}

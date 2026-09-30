@@ -1,0 +1,25 @@
+meta {
+  name: Me - tampered cookie
+  type: http
+  seq: 14
+}
+
+get {
+  url: {{anonBaseUrl}}/auth/me
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: zythologue_auth=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwicm9sZSI6ImFkbWluIn0.signature-forgee
+}
+
+assert {
+  res.status: eq 401
+  res.body.message: eq Session invalide ou expirée
+}
+
+docs {
+  Jeton forgé (payload { sub: "1", role: "admin" }) avec une fausse
+  signature : jwt.verify le rejette, impossible de se faire passer pour Alice.
+}

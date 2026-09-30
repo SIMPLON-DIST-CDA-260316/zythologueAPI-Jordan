@@ -1,0 +1,15 @@
+meta {
+  name: Get beer logs - client
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/beer-logs
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 403
+}

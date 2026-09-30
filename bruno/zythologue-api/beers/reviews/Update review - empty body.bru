@@ -1,0 +1,19 @@
+meta {
+  name: Update review - empty body
+  type: http
+  seq: 11
+}
+
+patch {
+  url: {{baseUrl}}/beers/1/reviews/{{reviewId}}
+  body: json
+  auth: none
+}
+
+body:json {
+  {}
+}
+
+assert {
+  res.status: eq 400
+}

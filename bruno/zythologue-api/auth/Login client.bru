@@ -1,0 +1,26 @@
+meta {
+  name: Login client
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{baseUrl}}/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "{{clientEmail}}",
+    "password": "{{seedPassword}}"
+  }
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Connecte Baptiste (client du seed, id 2). Remplace le cookie précédent.
+}

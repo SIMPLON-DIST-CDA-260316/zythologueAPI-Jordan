@@ -1,0 +1,19 @@
+meta {
+  name: Delete category - admin
+  type: http
+  seq: 8
+}
+
+delete {
+  url: {{baseUrl}}/categories/{{categoryId}}
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 204
+}
+
+docs {
+  Nettoie la catégorie créée juste avant.
+}

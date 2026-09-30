@@ -44,4 +44,13 @@ export class AuthRepository {
     );
     return result.rows[0] ?? null;
   }
+
+  async findById(id: number): Promise<User | null> {
+    const result = await this.pool.query<UserRow>(
+      `SELECT ${USER_SELECT} FROM "user" WHERE id = $1`,
+      [id],
+    );
+    const row = result.rows[0];
+    return row ? User.fromRow(row) : null;
+  }
 }

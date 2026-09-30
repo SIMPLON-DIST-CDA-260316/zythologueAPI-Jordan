@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { BreweryController } from "../../controllers/breweryController.ts";
 import { pool } from "../../db.ts";
+import { requireAdmin } from "../../middlewares/auth.ts";
 import { validate } from "../../middlewares/validate.ts";
 import { BreweryRepository } from "../../repositories/breweryRepository.ts";
 import {
@@ -17,9 +18,6 @@ const breweryService = new BreweryService(breweryRepository);
 const breweryController = new BreweryController(breweryService);
 
 const router = Router();
-
-// Quand l'auth sera en place, POST / PATCH / DELETE recevront un middleware de
-// rôle, à insérer entre le validate(...) et le contrôleur.
 
 // Route racine de l'API breweries : récupère toutes les brasseries
 router.get(
@@ -39,6 +37,7 @@ router.get(
 // Attention : la cascade SQL emporte aussi ses bières, photos, avis et favoris.
 router.delete(
   "/:id",
+  requireAdmin,
   validate(breweryIdParamSchema, "params"),
   breweryController.deleteOneById,
 );
@@ -46,6 +45,7 @@ router.delete(
 // Route pour ajouter une brasserie
 router.post(
   "/",
+  requireAdmin,
   validate(createBrewerySchema, "body"),
   breweryController.addOne,
 );
@@ -53,6 +53,7 @@ router.post(
 // Route pour modifier partiellement une brasserie par son id
 router.patch(
   "/:id",
+  requireAdmin,
   validate(breweryIdParamSchema, "params"),
   validate(patchBrewerySchema, "body"),
   breweryController.updateOneById,

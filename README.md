@@ -15,9 +15,11 @@ API REST de gestion de bières, développée dans le cadre du brief "Zythologue"
 L'architecture est volontairement écrite en **programmation orientée objet** (classes `Repository` / `Service` / `Controller` par entité), un choix fait pour s'exercer sur ce paradigme plutôt qu'une nécessité technique du projet.
 
 Chaque route suit la même chaîne de responsabilité :
-- **Controller** : validation de forme de la requête (paramètres d'URL, body via Zod) et mapping vers les codes HTTP.
-- **Service** : logique métier (règles de cohérence, vérifications d'existence en base).
+- **Middlewares** : contrôle d'accès (`authenticate`, `requireAdmin`), puis validation de forme avec Zod (`validate`). Leurs résultats sont déposés dans `res.locals` (`user`, `params`, `body`…).
+- **Controller** : lit `res.locals`, appelle le service et choisit le code HTTP de succès.
+- **Service** : logique métier (règles de cohérence, vérifications d'existence, règle du propriétaire).
 - **Repository** : accès aux données, requêtes SQL paramétrées.
+- **errorHandler** : toute erreur levée (`HttpError`) remonte jusqu'à lui. Express 5 transmet automatiquement les promesses rejetées à `next(err)`, et l'`errorHandler` les traduit en réponse HTTP.
 
 ## Installation et démarrage
 
@@ -437,7 +439,10 @@ Supprime une brasserie par son identifiant.
 
 ## Authentification
 
-Les diagrammes de séquence de l'inscription et de la connexion sont dans le dossier [`UML/`](UML/).
+Les diagrammes de séquence (Mermaid, avec l'export PDF dans [`UML/pdf/`](UML/pdf/)) :
+- [1. Enregistrement](UML/1-register.md)
+- [2. Identification](UML/2-login.md)
+- [3. Autorisation : middleware, rôles, propriétaire](UML/3-authorization.md)
 
 ### POST /api/v1/auth/register
 
@@ -503,9 +508,117 @@ Identifie un utilisateur par email et mot de passe. En cas de succès, la preuve
 
 ---
 
+### GET /api/v1/auth/me
+
+Renvoie l'utilisateur connecté. Cette route ne fait que renvoyer `res.locals.user`, déposé par le middleware `authenticate` : c'est la démonstration la plus directe du middleware.
+
+**Réponses**
+
+| Code | Cas | Corps |
+|---|---|---|
+| 200 | Jeton valide | `{ id, lastName, firstName, email, birthDate, role, createdAt }` |
+| 401 | Pas de cookie | `{ "message": "Authentification requise" }` |
+| 401 | Jeton invalide (signature, format), expiré, ou compte supprimé depuis | `{ "message": "Session invalide ou expirée" }` |
+
+---
+
+## Autorisation
+
+### Le middleware `authenticate`
+
+Défini dans [`src/middlewares/auth.ts`](src/middlewares/auth.ts), il enchaîne quatre étapes :
+1. Il lit le JWT dans le cookie `zythologue_auth`, en analysant directement l'en-tête `Cookie` (sans `cookie-parser`).
+2. Il le vérifie avec `AuthService.authenticate`, qui appelle `jwt.verify` avec l'algorithme **imposé** `HS256`. Une signature invalide, un jeton mal formé ou expiré donnent une 401.
+3. Il **recharge l'utilisateur en base** à partir de `sub`. Le rôle utilisé est donc celui de la base, et non celui écrit dans le jeton : un compte supprimé ou rétrogradé perd ses droits immédiatement, sans attendre l'expiration.
+4. Il dépose l'utilisateur dans `res.locals.user`, où les controllers le récupèrent.
+
+`requireAdmin` vaut `[authenticate, adminOnly]` : il authentifie, puis refuse (403) tout rôle autre que `admin`. Dans chaque route, le contrôle d'accès passe **avant** la validation et l'upload : un anonyme n'obtient aucun retour sur le format attendu, et aucun fichier n'est mis en mémoire pour lui.
+
+### Qui peut faire quoi
+
+| Accès | Routes | Refus |
+|---|---|---|
+| **Public** | tous les `GET` du catalogue (`/beers`, `/breweries`, `/categories`, `/ingredients`, photos), `GET /beers/:id/reviews`, `POST /auth/register`, `POST /auth/login` | — |
+| **Connecté** | `GET /auth/me`, `POST /beers/:id/reviews` | 401 |
+| **Auteur** | `PATCH /beers/:id/reviews/:reviewId` (même un admin ne modifie pas l'avis d'un autre) | 401, 403 |
+| **Auteur ou admin** | `DELETE /beers/:id/reviews/:reviewId` (modération) | 401, 403 |
+| **Admin** | tous les `POST` / `PATCH` / `DELETE` du catalogue (bières, brasseries, catégories, ingrédients, photos, liaisons `beer_category` / `beer_ingredient`), `GET /beer-logs` | 401, 403 |
+
+Toutes les routes protégées peuvent donc répondre, en plus des codes documentés pour chaque endpoint :
+
+| Code | Signification | Corps |
+|---|---|---|
+| 401 | Je ne sais pas qui tu es : pas de cookie, jeton invalide ou expiré | `{ "message": "Authentification requise" }` ou `{ "message": "Session invalide ou expirée" }` |
+| 403 | Je sais qui tu es, mais tu n'as pas le droit | `{ "message": "Accès réservé aux administrateurs" }` ou un message propre à la ressource |
+
+Comptes du seed pour tester (mot de passe `Motdepasse123!`) : `alice.dupont@example.com` (**admin**), `baptiste.martin@example.com` (**client**).
+
+---
+
+## Avis sur les bières (`beer_review`)
+
+C'est la ressource personnelle de chaque utilisateur. **L'auteur d'un avis est toujours l'utilisateur du jeton** : le body ne contient pas de `userId`, et s'il en contient un, Zod le supprime.
+
+```json
+{
+  "id": 26,
+  "grade": 8,
+  "comment": "Belle brune, un peu sucrée",
+  "createdAt": "2026-09-30T12:55:52.881Z",
+  "userId": 2,
+  "beerId": 1
+}
+```
+
+### GET /api/v1/beers/:id/reviews
+
+Liste les avis d'une bière (public). Réponses : `200` (tableau), `400` (`id` non conforme), `404` (bière non trouvée).
+
+### POST /api/v1/beers/:id/reviews
+
+Ajoute un avis de l'utilisateur connecté sur la bière.
+
+| Champ | Type | Obligatoire | Règles de validation |
+|---|---|---|---|
+| `grade` | number | oui | entier de 1 à 10 |
+| `comment` | string \| null | non | non vide (après trim) si fourni |
+
+| Code | Cas |
+|---|---|
+| 201 | Avis créé (`userId` = utilisateur du jeton) |
+| 400 | Body invalide |
+| 401 | Non connecté |
+| 404 | Bière non trouvée |
+| 409 | L'utilisateur a déjà donné son avis sur cette bière (un seul avis par personne et par bière) |
+
+### PATCH /api/v1/beers/:id/reviews/:reviewId
+
+Modifie partiellement son propre avis (`grade` et/ou `comment`, au moins un champ). `comment: null` efface le commentaire.
+
+| Code | Cas |
+|---|---|
+| 200 | Avis modifié |
+| 400 | Body vide ou invalide, ou identifiant non conforme |
+| 401 | Non connecté |
+| 403 | L'avis appartient à quelqu'un d'autre, même pour un admin : `{ "message": "Vous ne pouvez modifier que vos propres avis" }` |
+| 404 | Avis inexistant, ou rattaché à une autre bière que `:id` |
+
+### DELETE /api/v1/beers/:id/reviews/:reviewId
+
+Supprime un avis. Seuls l'auteur ou un admin (modération) le peuvent.
+
+| Code | Cas |
+|---|---|
+| 204 | Avis supprimé |
+| 401 | Non connecté |
+| 403 | Ni auteur ni admin : `{ "message": "Vous ne pouvez supprimer que vos propres avis" }` |
+| 404 | Avis inexistant, ou rattaché à une autre bière que `:id` |
+
+---
+
 ## Autres ressources
 
-Le détail complet (body, query params, réponses, exemples) de chaque endpoint ci-dessous est disponible dans le Swagger UI (`/api-docs`), tenu à jour au fil des ajouts. Liste des routes disponibles, par ressource :
+Le détail complet (body, query params, réponses, exemples) de chaque endpoint ci-dessous est disponible dans le Swagger UI (`/api-docs`), tenu à jour au fil des ajouts. Comme pour `Beer` et `Brewery`, les `GET` sont publics et toute écriture est réservée aux admins (voir [Autorisation](#autorisation)). Liste des routes disponibles, par ressource :
 
 **Photos** (sous-ressources de `beer` et `brewery`)
 - `GET/POST /api/v1/beers/:id/photos`, `DELETE /api/v1/beers/:id/photos/:photoId`
@@ -521,5 +634,20 @@ Le détail complet (body, query params, réponses, exemples) de chaque endpoint 
 - `POST /api/v1/beers/:id/categories` (body `{categoryId}`), `DELETE /api/v1/beers/:id/categories/:categoryId`
 - `POST /api/v1/beers/:id/ingredients` (body `{ingredientId}`), `DELETE /api/v1/beers/:id/ingredients/:ingredientId`
 
-**`beer_log`** — journal d'audit en lecture seule, alimenté par un trigger PostgreSQL sur chaque insertion de bière
+**`beer_log`** — journal d'audit en lecture seule, alimenté par un trigger PostgreSQL sur chaque insertion de bière, **réservé aux admins**
 - `GET /api/v1/beer-logs`
+
+---
+
+## Tests (Bruno)
+
+La collection [`bruno/zythologue-api/`](bruno/zythologue-api/) s'utilise avec l'environnement `Local`. Bruno garde le cookie d'authentification entre les requêtes, comme un navigateur.
+
+- **`auth/`** : inscription, connexion, `Me`. Les requêtes `Login admin` et `Login client` connectent les comptes du seed.
+- **`authorization/`** : scénario 401, puis 403, puis 201 sur le catalogue (anonyme, puis client, puis admin).
+- **`beers/reviews/`** : scénario complet des avis (auteur tiré du jeton, doublon, propriétaire, modération admin). Le scénario supprime l'avis qu'il crée : on peut le relancer.
+- Les requêtes d'écriture des autres dossiers (`beers/`, `categories/`…) demandent d'être connecté en admin : lancer d'abord `auth/Login admin`.
+
+Les requêtes « anonymes » utilisent `{{anonBaseUrl}}` (`127.0.0.1` au lieu de `localhost`). Bruno range ses cookies par domaine, donc ces requêtes partent sans cookie, même si une session est ouverte sur `localhost`.
+
+En ligne de commande : `npx @usebruno/cli run beers/reviews --env Local`, à lancer depuis `bruno/zythologue-api/`.

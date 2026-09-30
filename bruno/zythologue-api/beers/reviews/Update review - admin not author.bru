@@ -1,0 +1,25 @@
+meta {
+  name: Update review - admin not author
+  type: http
+  seq: 14
+}
+
+patch {
+  url: {{baseUrl}}/beers/1/reviews/{{reviewId}}
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "grade": 1
+  }
+}
+
+assert {
+  res.status: eq 403
+}
+
+docs {
+  Même un admin ne réécrit pas l'avis de quelqu'un d'autre.
+}

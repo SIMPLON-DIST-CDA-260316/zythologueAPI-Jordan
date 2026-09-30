@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { AUTH_COOKIE_NAME, JWT_EXPIRES_IN_S } from "../config/auth.ts";
+import type { User } from "../models/user.ts";
 import type { LoginInput, RegisterInput } from "../schemas/authSchema.ts";
 import type { AuthService } from "../services/authService.ts";
 
@@ -26,5 +27,9 @@ export class AuthController {
       maxAge: JWT_EXPIRES_IN_S * 1000,
     });
     res.status(200).json({ message: "Connexion réussie" });
+  };
+
+  me = (_req: Request, res: Response): void => {
+    res.status(200).json(res.locals.user as User);
   };
 }
