@@ -1,6 +1,7 @@
 import { DashboardPage } from "@/pages/dashboard";
 import { LoginPage } from "@/pages/login";
 import { RegisterPage } from "@/pages/register";
+import { Toaster } from "@/shared/ui/sonner";
 import { BrowserRouter, Route, Routes } from "react-router";
 
 export function App() {
@@ -11,6 +12,7 @@ export function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
       </Routes>
+      <Toaster position="top-center" />
     </BrowserRouter>
   );
 }

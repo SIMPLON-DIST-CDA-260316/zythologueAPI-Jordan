@@ -5,16 +5,59 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import {
   Field,
   FieldDescription,
+  FieldError,
   FieldGroup,
   FieldLabel,
 } from "@/shared/ui/field";
 import { Input } from "@/shared/ui/input";
-import { Link } from "react-router";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router";
+import { toast } from "sonner";
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
+  const navigate = useNavigate();
+  const [formError, setFormError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // FieldError attend [{ message }], l'API renvoie ["…"] : on convertit
+  const errorsFor = (name: string) =>
+    fieldErrors[name]?.map((message) => ({ message }));
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setFormError(null);
+    setFieldErrors({});
+
+    const body = Object.fromEntries(new FormData(event.currentTarget));
+
+    setIsSubmitting(true);
+    try {
+      const res = await fetch("/api/v1/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setFormError(data.message);
+        setFieldErrors(data.errors?.fieldErrors ?? {});
+        return;
+      }
+      // Le JWT arrive dans un cookie httpOnly : le navigateur le stocke seul
+      toast.success("Connexion réussie!");
+      navigate("/");
+    } catch {
+      setFormError("Impossible de joindre le serveur");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
@@ -22,7 +65,7 @@ export function LoginForm({
           <CardTitle className="text-xl">Connexion</CardTitle>
         </CardHeader>
         <CardContent>
-          <form>
+          <form onSubmit={handleSubmit}>
             <FieldGroup>
               <Field>
                 <FieldLabel htmlFor="email">Email</FieldLabel>
@@ -32,20 +75,32 @@ export function LoginForm({
                   name="email"
                   placeholder="email@example.com"
                   required
+                  aria-invalid={!!fieldErrors.email}
                 />
+                <FieldError errors={errorsFor("email")} />
               </Field>
               <Field>
-                <div className="flex items-center">
-                  <FieldLabel htmlFor="password">Mot de passe</FieldLabel>
-                </div>
-                <Input id="password" type="password" name="password" required />
+                <FieldLabel htmlFor="password">Mot de passe</FieldLabel>
+                <Input
+                  id="password"
+                  type="password"
+                  name="password"
+                  required
+                  aria-invalid={!!fieldErrors.password}
+                />
+                <FieldError errors={errorsFor("password")} />
               </Field>
               <Field>
-                <Button type="submit" className="cursor-pointer">
-                  Se connecter
+                {formError && <FieldError>{formError}</FieldError>}
+                <Button
+                  type="submit"
+                  className="cursor-pointer"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Connexion…" : "Se connecter"}
                 </Button>
                 <FieldDescription className="text-center">
-                  Vous n'avez pas de compte?{" "}
+                  Vous n'avez pas de compte ?{" "}
                   <Link to="/register">Créer un compte</Link>
                 </FieldDescription>
               </Field>

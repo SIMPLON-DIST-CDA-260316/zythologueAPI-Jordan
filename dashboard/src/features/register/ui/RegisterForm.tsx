@@ -11,16 +11,67 @@ import {
 import {
   Field,
   FieldDescription,
+  FieldError,
   FieldGroup,
   FieldLabel,
 } from "@/shared/ui/field";
 import { Input } from "@/shared/ui/input";
-import { Link } from "react-router";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router";
+import { toast } from "sonner";
 
 export function RegisterForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
+  const navigate = useNavigate();
+  const [formError, setFormError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // FieldError attend [{ message }], l'API renvoie ["…"] : on convertit
+  const errorsFor = (name: string) =>
+    fieldErrors[name]?.map((message) => ({ message }));
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setFormError(null);
+    setFieldErrors({});
+
+    const { confirmPassword, ...body } = Object.fromEntries(
+      new FormData(event.currentTarget),
+    );
+
+    if (body.password !== confirmPassword) {
+      setFieldErrors({
+        confirmPassword: ["Les mots de passe ne correspondent pas"],
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const res = await fetch("/api/v1/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setFormError(data.message);
+        setFieldErrors(data.errors?.fieldErrors ?? {});
+        return;
+      }
+      toast.success("Compte créé, vous pouvez vous connecter");
+      navigate("/login");
+    } catch {
+      setFormError("Impossible de joindre le serveur");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
@@ -31,7 +82,7 @@ export function RegisterForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form>
+          <form onSubmit={handleSubmit}>
             <FieldGroup>
               <Field className="grid grid-cols-2 gap-4">
                 <Field>
@@ -42,7 +93,9 @@ export function RegisterForm({
                     name="firstName"
                     maxLength={100}
                     required
+                    aria-invalid={!!fieldErrors.firstName}
                   />
+                  <FieldError errors={errorsFor("firstName")} />
                 </Field>
                 <Field>
                   <FieldLabel htmlFor="lastName">Nom</FieldLabel>
@@ -52,7 +105,9 @@ export function RegisterForm({
                     name="lastName"
                     maxLength={100}
                     required
+                    aria-invalid={!!fieldErrors.lastName}
                   />
+                  <FieldError errors={errorsFor("lastName")} />
                 </Field>
               </Field>
               <Field>
@@ -64,7 +119,9 @@ export function RegisterForm({
                   placeholder="email@example.com"
                   maxLength={255}
                   required
+                  aria-invalid={!!fieldErrors.email}
                 />
+                <FieldError errors={errorsFor("email")} />
               </Field>
               <Field>
                 <FieldLabel htmlFor="birthDate">Date de naissance</FieldLabel>
@@ -74,7 +131,9 @@ export function RegisterForm({
                   name="birthDate"
                   min="1900-01-01"
                   required
+                  aria-invalid={!!fieldErrors.birthDate}
                 />
+                <FieldError errors={errorsFor("birthDate")} />
               </Field>
               <Field>
                 <Field className="grid grid-cols-2 gap-4">
@@ -87,7 +146,9 @@ export function RegisterForm({
                       minLength={8}
                       maxLength={255}
                       required
+                      aria-invalid={!!fieldErrors.password}
                     />
+                    <FieldError errors={errorsFor("password")} />
                   </Field>
                   <Field>
                     <FieldLabel htmlFor="confirmPassword">
@@ -98,7 +159,9 @@ export function RegisterForm({
                       type="password"
                       name="confirmPassword"
                       required
+                      aria-invalid={!!fieldErrors.confirmPassword}
                     />
+                    <FieldError errors={errorsFor("confirmPassword")} />
                   </Field>
                 </Field>
                 <FieldDescription>
@@ -107,9 +170,15 @@ export function RegisterForm({
                 </FieldDescription>
               </Field>
               <Field>
-                <Button type="submit" className="cursor-pointer">
-                  Créer un compte
+                {formError && <FieldError>{formError}</FieldError>}
+                <Button
+                  type="submit"
+                  className="cursor-pointer"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Création…" : "Créer un compte"}
                 </Button>
+
                 <FieldDescription className="text-center">
                   Vous avez déjà un compte ?{" "}
                   <Link to="/login">Se connecter</Link>
