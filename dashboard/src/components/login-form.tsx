@@ -1,21 +1,21 @@
-import { cn } from "cn"
+import { cn } from "cn";
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/shared/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from "@/shared/ui/card";
 import {
   Field,
   FieldDescription,
   FieldGroup,
   FieldLabel,
   FieldSeparator,
-} from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
+} from "@/shared/ui/field";
+import { Input } from "@/shared/ui/input";
 
 export function LoginForm({
   className,
@@ -92,5 +92,5 @@ export function LoginForm({
         and <a href="#">Privacy Policy</a>.
       </FieldDescription>
     </div>
-  )
+  );
 }
