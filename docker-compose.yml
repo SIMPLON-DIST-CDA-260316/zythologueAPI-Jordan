@@ -1,6 +1,6 @@
 services:
   api:
-    build: .
+    build: ./api
     ports:
       - "3000:3000"
     environment:
@@ -9,12 +9,34 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       NODE_ENV: ${NODE_ENV:-development}
     volumes:
-      - ./src:/app/src
-      - ./scripts:/app/scripts
-      - ./uploads:/app/uploads
+      - ./api/uploads:/app/uploads
     depends_on:
       db:
         condition: service_healthy
+    develop:
+      watch:
+        - action: sync
+          path: ./api/src
+          target: /app/src
+        - action: sync
+          path: ./api/scripts
+          target: /app/scripts
+        - action: rebuild
+          path: ./api/package.json
+
+  dashboard:
+    build: ./dashboard
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+    develop:
+      watch:
+        - action: sync
+          path: ./dashboard
+          target: /app
+        - action: rebuild
+          path: ./dashboard/package.json
 
   db:
     image: postgres:18-alpine

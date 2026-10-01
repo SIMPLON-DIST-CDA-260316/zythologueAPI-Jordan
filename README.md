@@ -1,9 +1,22 @@
 # Zythologue API
 
-API REST de gestion de bières, développée dans le cadre du brief "Zythologue" (conception et implémentation d'une API CRUD).
+API REST de gestion de bières, développée dans le cadre du brief "Zythologue" (conception et implémentation d'une API CRUD), accompagnée d'un dashboard React.
+
+## Structure du projet
+
+| Dossier | Contenu |
+|---|---|
+| [`api/`](api/) | API REST (Express), avec son `Dockerfile` |
+| [`dashboard/`](dashboard/) | Front React (Vite), avec son `Dockerfile` |
+| [`bruno/`](bruno/) | Collection de requêtes Bruno |
+| [`UML/`](UML/) | Diagrammes de séquence |
+
+`docker-compose.yml`, `.env` et le `package.json` des scripts de lancement sont à la racine.
 
 ## Stack technique
 
+- **Docker Compose** : `api`, `dashboard`, `db` (PostgreSQL 18), `adminer`, sur des images `node:24-alpine` (LTS)
+- **React** + **Vite** pour le dashboard
 - **Node.js** / **TypeScript**
 - **Express** pour le serveur HTTP
 - **PostgreSQL** avec le driver **pg**, en requêtes SQL natives (pas d'ORM)
@@ -38,17 +51,33 @@ Chaque route suit la même chaîne de responsabilité :
      node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
      ```
    - `NODE_ENV` vaut `development` par défaut. En `production`, le cookie d'authentification reçoit l'attribut `Secure` (envoyé uniquement en HTTPS).
-2. Démarrer l'application et la base de données :
+2. Démarrer tous les services (aucun `npm install` nécessaire à la racine) :
    ```
    npm run dev
    ```
-3. Jouer la migration puis le seed (dans le conteneur `api`) :
+3. Jouer la migration puis le seed (dans le conteneur `api`), depuis un second terminal :
    ```
    npm run db:migrate
    npm run db:seed
    ```
 
-L'API est alors disponible sur `http://localhost:3000/api/v1/beers` (port configurable via la variable d'environnement `PORT`).
+| Script | Commande | Rôle |
+|---|---|---|
+| `npm run dev` | `docker compose up --build --watch` | Build, démarrage et hot reload (`Ctrl+C` pour arrêter) |
+| `npm run down` | `docker compose down` | Supprime les conteneurs ; le volume de la base est conservé |
+| `npm run db:migrate` | `docker compose exec api npm run migrate` | Crée le schéma |
+| `npm run db:seed` | `docker compose exec api npm run seed` | Insère les données de test |
+
+| Service | URL |
+|---|---|
+| Dashboard | `http://localhost:5173` |
+| API | `http://localhost:3000/api/v1/beers` |
+| Swagger UI | `http://localhost:3000/api-docs` |
+| Adminer | `http://localhost:8080` |
+
+**Hot reload** : il repose sur [Compose Watch](https://docs.docker.com/compose/how-tos/file-watch/) (section `develop.watch` du compose). Compose copie chaque fichier modifié dans le conteneur, où Vite (HMR) et `tsx watch` le détectent. Ça fonctionne de la même manière sous Linux et sous Windows, même avec le projet sur `C:\`. Une modification de `package.json` reconstruit l'image automatiquement. Sans `--watch` (par exemple avec un simple `docker compose up`), les conteneurs tournent sur le code copié au build.
+
+**Dashboard → API** : en développement, Vite relaie les requêtes `/api/*` vers le conteneur `api` (proxy dans [`dashboard/vite.config.ts`](dashboard/vite.config.ts)). Le front appelle donc `/api/v1/...` sur sa propre origine : pas de CORS, et le cookie d'authentification fonctionne sans configuration.
 
 Une documentation interactive (Swagger UI) est disponible sur `http://localhost:3000/api-docs` : elle permet de consulter chaque endpoint et de l'exécuter directement contre l'API réelle ("Try it out").
 
@@ -526,7 +555,7 @@ Renvoie l'utilisateur connecté. Cette route ne fait que renvoyer `res.locals.us
 
 ### Le middleware `authenticate`
 
-Défini dans [`src/middlewares/auth.ts`](src/middlewares/auth.ts), il enchaîne quatre étapes :
+Défini dans [`api/src/middlewares/auth.ts`](api/src/middlewares/auth.ts), il enchaîne quatre étapes :
 1. Il lit le JWT dans le cookie `zythologue_auth`, en analysant directement l'en-tête `Cookie` (sans `cookie-parser`).
 2. Il le vérifie avec `AuthService.authenticate`, qui appelle `jwt.verify` avec l'algorithme **imposé** `HS256`. Une signature invalide, un jeton mal formé ou expiré donnent une 401.
 3. Il **recharge l'utilisateur en base** à partir de `sub`. Le rôle utilisé est donc celui de la base, et non celui écrit dans le jeton : un compte supprimé ou rétrogradé perd ses droits immédiatement, sans attendre l'expiration.
