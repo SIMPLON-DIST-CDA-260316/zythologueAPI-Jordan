@@ -1,0 +1,20 @@
+meta {
+  name: Logout
+  type: http
+  seq: 15
+}
+
+post {
+  url: {{baseUrl}}/auth/logout
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 204
+}
+
+docs {
+  À lancer après "Login client". La réponse expire le cookie : Bruno le retire
+  de son stockage, la requête suivante part sans cookie.
+}

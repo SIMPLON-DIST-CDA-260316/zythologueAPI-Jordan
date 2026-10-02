@@ -537,6 +537,22 @@ Identifie un utilisateur par email et mot de passe. En cas de succès, la preuve
 
 ---
 
+### POST /api/v1/auth/logout
+
+Supprime le cookie d'authentification. Le cookie est `httpOnly` : le front ne peut pas l'effacer lui-même, il doit passer par cette route.
+
+La route ne demande pas d'être connecté : se déconnecter sans session, ou avec une session expirée, réussit aussi. C'est un `POST` et non un `GET` : une action qui modifie l'état ne doit pas pouvoir être déclenchée par un simple lien.
+
+**Réponses**
+
+| Code | Cas | Corps |
+|---|---|---|
+| 204 | Cookie supprimé | aucun, + en-tête `Set-Cookie` qui expire le cookie |
+
+**Limite** : le JWT est stateless, il n'est pas révoqué côté serveur. Une copie interceptée reste valable jusqu'à son expiration (1 h). Révoquer immédiatement demanderait une liste noire en base ou des jetons courts avec refresh token.
+
+---
+
 ### GET /api/v1/auth/me
 
 Renvoie l'utilisateur connecté. Cette route ne fait que renvoyer `res.locals.user`, déposé par le middleware `authenticate` : c'est la démonstration la plus directe du middleware.

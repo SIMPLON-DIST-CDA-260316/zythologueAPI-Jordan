@@ -2329,6 +2329,25 @@ export const openapiSpec = {
         },
       },
     },
+    "/auth/logout": {
+      post: {
+        summary: "Déconnecte l'utilisateur",
+        description:
+          "Supprime le cookie httpOnly zythologue_auth, que le front ne peut pas effacer lui-même. Ne demande pas d'être connecté : sans session (ou avec une session expirée), la réponse est la même. Le JWT n'est pas révoqué côté serveur : une copie interceptée reste valable jusqu'à son expiration.",
+        responses: {
+          "204": {
+            description: "Déconnexion réussie",
+            headers: {
+              "Set-Cookie": {
+                description:
+                  "zythologue_auth=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Strict",
+                schema: { type: "string" },
+              },
+            },
+          },
+        },
+      },
+    },
     "/auth/me": {
       get: {
         summary: "Renvoie l'utilisateur connecté",

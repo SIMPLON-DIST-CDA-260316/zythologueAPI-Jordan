@@ -27,6 +27,9 @@ router.post(
   authController.login,
 );
 
+// Sans authenticate : se déconnecter avec une session expirée doit réussir aussi
+router.post("/logout", authController.logout);
+
 router.get("/me", authenticate, authController.me);
 
 export default router;

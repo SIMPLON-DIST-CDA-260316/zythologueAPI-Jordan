@@ -1,0 +1,21 @@
+meta {
+  name: Me - after logout
+  type: http
+  seq: 16
+}
+
+get {
+  url: {{baseUrl}}/auth/me
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 401
+  res.body.message: eq Authentification requise
+}
+
+docs {
+  À lancer après "Logout". Même baseUrl que "Me" (localhost) : si le cookie
+  avait survécu au logout, on aurait un 200.
+}

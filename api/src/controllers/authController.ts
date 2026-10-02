@@ -4,6 +4,14 @@ import type { User } from "../models/user.ts";
 import type { LoginInput, RegisterInput } from "../schemas/authSchema.ts";
 import type { AuthService } from "../services/authService.ts";
 
+// Partagées par login et logout : le navigateur n'efface un cookie que si
+// ses attributs correspondent à ceux de sa création
+const cookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "strict",
+} as const;
+
 export class AuthController {
   private readonly authService: AuthService;
 
@@ -21,12 +29,15 @@ export class AuthController {
     const body = res.locals.body as LoginInput;
     const token = await this.authService.login(body);
     res.cookie(AUTH_COOKIE_NAME, token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      ...cookieOptions,
       maxAge: JWT_EXPIRES_IN_S * 1000,
     });
     res.status(200).json({ message: "Connexion réussie" });
+  };
+
+  logout = (_req: Request, res: Response): void => {
+    res.clearCookie(AUTH_COOKIE_NAME, cookieOptions);
+    res.status(204).end();
   };
 
   me = (_req: Request, res: Response): void => {
