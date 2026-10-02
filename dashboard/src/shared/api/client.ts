@@ -16,6 +16,14 @@ export class ApiError extends Error {
   }
 }
 
+// apiFetch ne lève que des ApiError : on l'indique à TanStack Query pour que
+// `error` soit typé ApiError (au lieu de Error) dans useQuery/useMutation
+declare module "@tanstack/react-query" {
+  interface Register {
+    defaultError: ApiError;
+  }
+}
+
 type Options = { method?: string; body?: unknown };
 
 // Pas de credentials: "include" : le proxy Vite sert l'API sur la même

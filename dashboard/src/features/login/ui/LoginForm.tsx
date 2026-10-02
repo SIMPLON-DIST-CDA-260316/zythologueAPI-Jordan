@@ -1,7 +1,6 @@
 import { cn } from "cn";
 
 import { login, loginSchema } from "@/entities/session";
-import { ApiError } from "@/shared/api";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import {
@@ -12,6 +11,7 @@ import {
   FieldLabel,
 } from "@/shared/ui/field";
 import { Input } from "@/shared/ui/input";
+import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
@@ -22,39 +22,37 @@ export function LoginForm({
   ...props
 }: React.ComponentProps<"div">) {
   const navigate = useNavigate();
-  const [formError, setFormError] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  // Seules les erreurs Zod restent en state local : chargement et erreurs API
+  // sont gérés par la mutation
+  const [zodErrors, setZodErrors] = useState<Record<string, string[]>>({});
+  const { mutate, isPending, error, reset } = useMutation({
+    mutationFn: login,
+    onSuccess: () => {
+      toast.success("Connexion réussie!");
+      navigate("/");
+    },
+  });
+
+  const formError = error?.message;
+  const fieldErrors = { ...error?.fieldErrors, ...zodErrors };
 
   // FieldError attend [{ message }], l'API renvoie ["…"] : on convertit
   const errorsFor = (name: string) =>
     fieldErrors[name]?.map((message) => ({ message }));
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setFormError(null);
-    setFieldErrors({});
+    reset(); // efface l'erreur API de la tentative précédente
 
     const result = loginSchema.safeParse(
       Object.fromEntries(new FormData(event.currentTarget)),
     );
     if (!result.success) {
-      setFieldErrors(z.flattenError(result.error).fieldErrors);
+      setZodErrors(z.flattenError(result.error).fieldErrors);
       return;
     }
-
-    setIsSubmitting(true);
-    try {
-      await login(result.data);
-      toast.success("Connexion réussie!");
-      navigate("/");
-    } catch (err) {
-      if (!(err instanceof ApiError)) throw err;
-      setFormError(err.message);
-      setFieldErrors(err.fieldErrors);
-    } finally {
-      setIsSubmitting(false);
-    }
+    setZodErrors({});
+    mutate(result.data);
   }
 
   return (
@@ -96,9 +94,9 @@ export function LoginForm({
                 <Button
                   type="submit"
                   className="cursor-pointer"
-                  disabled={isSubmitting}
+                  disabled={isPending}
                 >
-                  {isSubmitting ? "Connexion…" : "Se connecter"}
+                  {isPending ? "Connexion…" : "Se connecter"}
                 </Button>
                 <FieldDescription className="text-center">
                   Vous n'avez pas de compte ?{" "}
