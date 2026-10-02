@@ -1,5 +1,7 @@
 import { cn } from "cn";
 
+import { login, type LoginInput } from "@/entities/session";
+import { ApiError } from "@/shared/api";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import {
@@ -36,23 +38,14 @@ export function LoginForm({
 
     setIsSubmitting(true);
     try {
-      const res = await fetch("/api/v1/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        setFormError(data.message);
-        setFieldErrors(data.errors?.fieldErrors ?? {});
-        return;
-      }
-      // Le JWT arrive dans un cookie httpOnly : le navigateur le stocke seul
+      // ponytail: cast temporaire, remplacé par le parse Zod à l'étape 3
+      await login(body as LoginInput);
       toast.success("Connexion réussie!");
       navigate("/");
-    } catch {
-      setFormError("Impossible de joindre le serveur");
+    } catch (err) {
+      if (!(err instanceof ApiError)) throw err;
+      setFormError(err.message);
+      setFieldErrors(err.fieldErrors);
     } finally {
       setIsSubmitting(false);
     }

@@ -1,5 +1,7 @@
 import { cn } from "cn";
 
+import { register, type RegisterInput } from "@/entities/session";
+import { ApiError } from "@/shared/api";
 import { Button } from "@/shared/ui/button";
 import {
   Card,
@@ -51,22 +53,14 @@ export function RegisterForm({
 
     setIsSubmitting(true);
     try {
-      const res = await fetch("/api/v1/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        setFormError(data.message);
-        setFieldErrors(data.errors?.fieldErrors ?? {});
-        return;
-      }
+      // ponytail: cast temporaire, remplacé par le parse Zod à l'étape 3
+      await register(body as RegisterInput);
       toast.success("Compte créé, vous pouvez vous connecter");
       navigate("/login");
-    } catch {
-      setFormError("Impossible de joindre le serveur");
+    } catch (err) {
+      if (!(err instanceof ApiError)) throw err;
+      setFormError(err.message);
+      setFieldErrors(err.fieldErrors);
     } finally {
       setIsSubmitting(false);
     }
