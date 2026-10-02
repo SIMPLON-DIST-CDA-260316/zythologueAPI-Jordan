@@ -1,17 +1,41 @@
 import { useAuth } from "@/entities/session";
-import { Button } from "@/shared/ui/button";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/shared/ui/card";
+import { SidebarInset, SidebarProvider } from "@/shared/ui/sidebar";
+import { AppSidebar } from "@/widgets/app-sidebar";
+import { SiteHeader } from "@/widgets/site-header";
 
-// ponytail: version provisoire, remplacée par le layout sidebar à l'étape 6
 export function DashboardPage() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
   return (
-    <div className="flex flex-col items-start gap-4 p-6">
-      <h1 className="text-xl font-semibold">Dashboard</h1>
-      <p>Bonjour {user?.firstName}, vous êtes connecté en tant qu'admin.</p>
-      <Button className="cursor-pointer" onClick={() => logout()}>
-        Se déconnecter
-      </Button>
-    </div>
+    <SidebarProvider
+      style={
+        {
+          "--sidebar-width": "calc(var(--spacing) * 72)",
+          "--header-height": "calc(var(--spacing) * 12)",
+        } as React.CSSProperties
+      }
+    >
+      <AppSidebar variant="inset" />
+      <SidebarInset>
+        <SiteHeader title="Tableau de bord" />
+        <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Bienvenue, {user?.firstName}</CardTitle>
+              <CardDescription>
+                Espace d'administration de Zythologue. La gestion des bières,
+                brasseries, catégories et ingrédients arrivera ici.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
