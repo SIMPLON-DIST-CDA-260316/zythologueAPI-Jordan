@@ -1,4 +1,12 @@
-export { getMe, login, logout, register } from "./api/sessionApi";
+export {
+  getMe,
+  login,
+  logout,
+  ME_QUERY_KEY,
+  register,
+} from "./api/sessionApi";
+export { useAuth } from "./model/authContext";
+export { AuthProvider } from "./model/AuthProvider";
 export {
   loginSchema,
   registerSchema,

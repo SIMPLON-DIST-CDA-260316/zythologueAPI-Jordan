@@ -1,6 +1,6 @@
 import { cn } from "cn";
 
-import { login, loginSchema } from "@/entities/session";
+import { login, loginSchema, ME_QUERY_KEY } from "@/entities/session";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import {
@@ -11,9 +11,9 @@ import {
   FieldLabel,
 } from "@/shared/ui/field";
 import { Input } from "@/shared/ui/input";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link } from "react-router";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -21,15 +21,17 @@ export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   // Seules les erreurs Zod restent en state local : chargement et erreurs API
   // sont gérés par la mutation
   const [zodErrors, setZodErrors] = useState<Record<string, string[]>>({});
   const { mutate, isPending, error, reset } = useMutation({
     mutationFn: login,
-    onSuccess: () => {
+    onSuccess: async () => {
+      // Recharge /auth/me : une fois l'utilisateur dans le cache, GuestOnly
+      // redirige vers "/". Le await garde le bouton en "Connexion…" jusque-là.
+      await queryClient.invalidateQueries({ queryKey: ME_QUERY_KEY });
       toast.success("Connexion réussie!");
-      navigate("/");
     },
   });
 

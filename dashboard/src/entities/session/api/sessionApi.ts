@@ -11,6 +11,9 @@ export const login = (input: LoginInput) =>
 
 export const logout = () => apiFetch<void>("/auth/logout", { method: "POST" });
 
+// Clé du cache TanStack Query où vit l'utilisateur connecté
+export const ME_QUERY_KEY = ["me"];
+
 // Pas connecté n'est pas une erreur : 401 → null
 export async function getMe(): Promise<User | null> {
   try {
