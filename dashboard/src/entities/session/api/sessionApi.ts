@@ -1,5 +1,6 @@
 import { ApiError, apiFetch } from "@/shared/api";
-import type { LoginInput, RegisterInput, User } from "../model/types";
+import type { LoginInput, RegisterInput } from "../model/schemas";
+import type { User } from "../model/types";
 
 export const register = (input: RegisterInput) =>
   apiFetch<User>("/auth/register", { method: "POST", body: input });

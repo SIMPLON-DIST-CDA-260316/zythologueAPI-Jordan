@@ -1,6 +1,6 @@
 import { cn } from "cn";
 
-import { register, type RegisterInput } from "@/entities/session";
+import { register } from "@/entities/session";
 import { ApiError } from "@/shared/api";
 import { Button } from "@/shared/ui/button";
 import {
@@ -21,6 +21,8 @@ import { Input } from "@/shared/ui/input";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
+import { z } from "zod";
+import { registerFormSchema } from "../model/schema";
 
 export function RegisterForm({
   className,
@@ -40,21 +42,18 @@ export function RegisterForm({
     setFormError(null);
     setFieldErrors({});
 
-    const { confirmPassword, ...body } = Object.fromEntries(
-      new FormData(event.currentTarget),
+    const result = registerFormSchema.safeParse(
+      Object.fromEntries(new FormData(event.currentTarget)),
     );
-
-    if (body.password !== confirmPassword) {
-      setFieldErrors({
-        confirmPassword: ["Les mots de passe ne correspondent pas"],
-      });
+    if (!result.success) {
+      setFieldErrors(z.flattenError(result.error).fieldErrors);
       return;
     }
 
     setIsSubmitting(true);
     try {
-      // ponytail: cast temporaire, remplacé par le parse Zod à l'étape 3
-      await register(body as RegisterInput);
+      // confirmPassword part aussi : l'API ignore les clés qu'elle ne connaît pas
+      await register(result.data);
       toast.success("Compte créé, vous pouvez vous connecter");
       navigate("/login");
     } catch (err) {
@@ -76,7 +75,9 @@ export function RegisterForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit}>
+          {/* noValidate : les attributs HTML restent (clavier mobile,
+              accessibilité) mais c'est Zod qui affiche les erreurs */}
+          <form onSubmit={handleSubmit} noValidate>
             <FieldGroup>
               <Field className="grid grid-cols-2 gap-4">
                 <Field>

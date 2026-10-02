@@ -1,6 +1,6 @@
 import { cn } from "cn";
 
-import { login, type LoginInput } from "@/entities/session";
+import { login, loginSchema } from "@/entities/session";
 import { ApiError } from "@/shared/api";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
@@ -15,6 +15,7 @@ import { Input } from "@/shared/ui/input";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
+import { z } from "zod";
 
 export function LoginForm({
   className,
@@ -34,12 +35,17 @@ export function LoginForm({
     setFormError(null);
     setFieldErrors({});
 
-    const body = Object.fromEntries(new FormData(event.currentTarget));
+    const result = loginSchema.safeParse(
+      Object.fromEntries(new FormData(event.currentTarget)),
+    );
+    if (!result.success) {
+      setFieldErrors(z.flattenError(result.error).fieldErrors);
+      return;
+    }
 
     setIsSubmitting(true);
     try {
-      // ponytail: cast temporaire, remplacé par le parse Zod à l'étape 3
-      await login(body as LoginInput);
+      await login(result.data);
       toast.success("Connexion réussie!");
       navigate("/");
     } catch (err) {
@@ -58,7 +64,9 @@ export function LoginForm({
           <CardTitle className="text-xl">Connexion</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit}>
+          {/* noValidate : les attributs HTML restent (clavier mobile,
+              accessibilité) mais c'est Zod qui affiche les erreurs */}
+          <form onSubmit={handleSubmit} noValidate>
             <FieldGroup>
               <Field>
                 <FieldLabel htmlFor="email">Email</FieldLabel>

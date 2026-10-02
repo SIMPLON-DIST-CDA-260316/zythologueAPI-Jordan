@@ -8,10 +8,3 @@ export type User = {
   role: "client" | "admin";
   createdAt: string;
 };
-
-export type RegisterInput = Pick<
-  User,
-  "lastName" | "firstName" | "email" | "birthDate"
-> & { password: string };
-
-export type LoginInput = { email: string; password: string };
