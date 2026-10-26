@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
 import { createColumnHelper } from "@tanstack/react-table";
-import { EllipsisVerticalIcon, Trash2Icon } from "lucide-react";
+import { EllipsisVerticalIcon, PencilIcon, Trash2Icon } from "lucide-react";
 
 const euro = new Intl.NumberFormat("fr-FR", {
   style: "currency",
@@ -19,6 +19,7 @@ const decimal = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 1 });
 const columnHelper = createColumnHelper<DataTableFeatures, Beer>();
 
 type BeerColumnActions = {
+  onEdit: (beer: Beer) => void;
   onDelete: (beer: Beer) => void;
 };
 
@@ -26,7 +27,7 @@ type BeerColumnActions = {
 // de la page (à appeler dans un useMemo, TanStack veut des colonnes stables).
 // Les ids "price" et "alcoholLevel" sont aussi les valeurs de sortBy dans
 // l'API : seules ces deux colonnes sont triables côté serveur
-export const getBeerColumns = ({ onDelete }: BeerColumnActions) =>
+export const getBeerColumns = ({ onEdit, onDelete }: BeerColumnActions) =>
   columnHelper.columns([
     columnHelper.accessor("name", {
       header: "Nom",
@@ -62,6 +63,10 @@ export const getBeerColumns = ({ onDelete }: BeerColumnActions) =>
             <EllipsisVerticalIcon />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => onEdit(row.original)}>
+              <PencilIcon />
+              Modifier
+            </DropdownMenuItem>
             <DropdownMenuItem
               variant="destructive"
               onClick={() => onDelete(row.original)}

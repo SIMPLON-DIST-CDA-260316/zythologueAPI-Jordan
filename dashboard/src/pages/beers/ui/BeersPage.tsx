@@ -1,11 +1,14 @@
 import { beerQueries, type Beer } from "@/entities/beer";
+import { BeerFormSheet } from "@/features/beer-form";
 import { DeleteBeerDialog } from "@/features/delete-beer";
+import { Button } from "@/shared/ui/button";
 import { DataTable } from "@/shared/ui/data-table";
 import { DataTablePagination } from "@/shared/ui/data-table-pagination";
 import { SiteHeader } from "@/widgets/site-header";
 import { useQuery } from "@tanstack/react-query";
 import type { OnChangeFn, SortingState } from "@tanstack/react-table";
 import { cn } from "cn";
+import { PlusIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useBeerSearchParams } from "../model/useBeerSearchParams";
 import { BeersToolbar } from "./BeersToolbar";
@@ -17,8 +20,17 @@ export function BeersPage() {
   // Tout l'état de la liste vit dans l'URL : F5, retour arrière, lien partagé
   const { params, setParams, clearParams } = useBeerSearchParams();
   const [beerToDelete, setBeerToDelete] = useState<Beer | null>(null);
+  // open séparé de beer : à la fermeture, le titre reste le bon pendant l'animation
+  const [form, setForm] = useState<{ open: boolean; beer: Beer | null }>({
+    open: false,
+    beer: null,
+  });
   const columns = useMemo(
-    () => getBeerColumns({ onDelete: setBeerToDelete }),
+    () =>
+      getBeerColumns({
+        onEdit: (beer) => setForm({ open: true, beer }),
+        onDelete: setBeerToDelete,
+      }),
     [],
   );
 
@@ -52,11 +64,17 @@ export function BeersPage() {
     <>
       <SiteHeader title="Bières" />
       <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
-        <BeersToolbar
-          params={params}
-          setParams={setParams}
-          clearParams={clearParams}
-        />
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <BeersToolbar
+            params={params}
+            setParams={setParams}
+            clearParams={clearParams}
+          />
+          <Button onClick={() => setForm({ open: true, beer: null })}>
+            <PlusIcon />
+            Ajouter une bière
+          </Button>
+        </div>
         {isError ? (
           <p className="text-sm text-destructive">{error.message}</p>
         ) : (
@@ -83,6 +101,11 @@ export function BeersPage() {
           </>
         )}
       </div>
+      <BeerFormSheet
+        open={form.open}
+        beer={form.beer}
+        onOpenChange={(open) => setForm((current) => ({ ...current, open }))}
+      />
       <DeleteBeerDialog
         beer={beerToDelete}
         onClose={() => setBeerToDelete(null)}
