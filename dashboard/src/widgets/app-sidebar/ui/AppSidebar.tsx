@@ -9,13 +9,19 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/shared/ui/sidebar";
-import { BeerIcon, LayoutDashboardIcon } from "lucide-react";
-import { Link } from "react-router";
+import { BeerIcon, LayoutDashboardIcon, ListIcon } from "lucide-react";
+import { Link, useLocation } from "react-router";
 import { NavUser } from "./NavUser";
 
-// Une seule entrée pour l'instant : bières, brasseries, catégories et
-// ingrédients s'ajouteront ici avec leurs pages CRUD
+// Brasseries, catégories et ingrédients s'ajouteront ici avec leurs pages
+const navItems = [
+  { title: "Tableau de bord", url: "/", icon: LayoutDashboardIcon },
+  { title: "Bières", url: "/bieres", icon: ListIcon },
+];
+
 export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
+  const { pathname } = useLocation();
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -35,16 +41,18 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  isActive
-                  tooltip="Tableau de bord"
-                  render={<Link to="/" />}
-                >
-                  <LayoutDashboardIcon />
-                  <span>Tableau de bord</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {navItems.map((item) => (
+                <SidebarMenuItem key={item.url}>
+                  <SidebarMenuButton
+                    isActive={pathname === item.url}
+                    tooltip={item.title}
+                    render={<Link to={item.url} />}
+                  >
+                    <item.icon />
+                    <span>{item.title}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

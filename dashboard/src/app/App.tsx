@@ -1,4 +1,5 @@
 import { AuthProvider } from "@/entities/session";
+import { BeersPage } from "@/pages/beers";
 import { DashboardPage } from "@/pages/dashboard";
 import { ForbiddenPage } from "@/pages/forbidden";
 import { LoginPage } from "@/pages/login";
@@ -7,6 +8,7 @@ import { Toaster } from "@/shared/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router";
 import { GuestOnly, RequireAdmin, RequireAuth } from "./guards";
+import { AdminLayout } from "./layouts/AdminLayout";
 
 // Hors du composant : un seul cache pour toute la durée de vie de l'app
 const queryClient = new QueryClient();
@@ -19,7 +21,10 @@ export function App() {
           <Routes>
             <Route element={<RequireAuth />}>
               <Route element={<RequireAdmin />}>
-                <Route path="/" element={<DashboardPage />} />
+                <Route element={<AdminLayout />}>
+                  <Route path="/" element={<DashboardPage />} />
+                  <Route path="/bieres" element={<BeersPage />} />
+                </Route>
               </Route>
               <Route path="/acces-refuse" element={<ForbiddenPage />} />
             </Route>

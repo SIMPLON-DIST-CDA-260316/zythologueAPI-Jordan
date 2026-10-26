@@ -24,17 +24,31 @@ declare module "@tanstack/react-query" {
   }
 }
 
-type Options = { method?: string; body?: unknown };
+type Options = {
+  method?: string;
+  body?: unknown;
+  query?: Record<string, string | number | boolean | undefined>;
+};
+
+// Filtres non renseignés (undefined) ou vidés ("") : pas envoyés à l'API
+function toQueryString(query: Options["query"] = {}): string {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(query)) {
+    if (value !== undefined && value !== "") params.set(key, String(value));
+  }
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
+}
 
 // Pas de credentials: "include" : le proxy Vite sert l'API sur la même
 // origine que le front, le cookie d'authentification part donc tout seul
 export async function apiFetch<T>(
   path: string,
-  { method = "GET", body }: Options = {},
+  { method = "GET", body, query }: Options = {},
 ): Promise<T> {
   let res: Response;
   try {
-    res = await fetch(`/api/v1${path}`, {
+    res = await fetch(`/api/v1${path}${toQueryString(query)}`, {
       method,
       headers:
         body === undefined ? undefined : { "Content-Type": "application/json" },
