@@ -82,6 +82,24 @@ Chaque route suit la même chaîne de responsabilité :
 
 Une documentation interactive (Swagger UI) est disponible sur `http://localhost:3000/api-docs` : elle permet de consulter chaque endpoint et de l'exécuter directement contre l'API réelle ("Try it out").
 
+## Dashboard
+
+Front d'administration en **React + Vite**, construit sur les blocs [shadcn/ui](https://ui.shadcn.com) (composants Base UI). Réservé aux comptes **admin** : un client connecté est redirigé vers `/acces-refuse`.
+
+| Route | Accès | Contenu |
+|---|---|---|
+| `/login`, `/register` | non connecté | Connexion, création de compte |
+| `/` | admin | Tableau de bord |
+| `/bieres` | admin | Liste paginée des bières : recherche par nom, filtres (brasserie, alcool), tri (prix, degré), création, modification, suppression |
+
+**Choix techniques**
+
+- **Authentification** : le JWT reste dans le cookie `httpOnly` posé par l'API, jamais lisible en JavaScript (pas de `localStorage`). L'utilisateur connecté vient de `GET /auth/me`, mis en cache par TanStack Query et exposé par un `AuthContext`. Les guards de routes (`RequireAuth`, `RequireAdmin`, `GuestOnly`) redirigent selon ce cache. Un 401 en cours d'utilisation (session expirée) vide ce cache et renvoie vers `/login`.
+- **Appels API** : un seul point d'entrée, `apiFetch` (`shared/api`), qui lève des `ApiError` typées. Les requêtes passent par **TanStack Query** (`queryOptions` par entité, invalidation après chaque création, modification ou suppression).
+- **Validation** : les schémas Zod sont partagés avec l'API via `@zythologue/shared`. Le formulaire valide avant l'envoi pour l'UX, l'API revalide tout.
+- **Liste des bières** : DataTable shadcn sur TanStack Table v9. Pagination, recherche, filtres et tri sont faits **côté API** ; leur état vit dans l'URL (`?search=ipa&sortBy=price&page=2`), donc il résiste au rechargement et se partage.
+- **Organisation** : [Feature-Sliced Design](https://feature-sliced.design) (`app`, `pages`, `widgets`, `features`, `entities`, `shared`).
+
 ## Ressource `Beer`
 
 Exemple de représentation JSON d'une bière telle que renvoyée par l'API :

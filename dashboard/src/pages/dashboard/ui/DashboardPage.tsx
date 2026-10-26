@@ -6,6 +6,7 @@ import {
   CardTitle,
 } from "@/shared/ui/card";
 import { SiteHeader } from "@/widgets/site-header";
+import { Link } from "react-router";
 
 export function DashboardPage() {
   const { user } = useAuth();
@@ -18,8 +19,12 @@ export function DashboardPage() {
           <CardHeader>
             <CardTitle>Bienvenue, {user?.firstName}</CardTitle>
             <CardDescription>
-              Espace d'administration de Zythologue. La gestion des bières,
-              brasseries, catégories et ingrédients arrivera ici.
+              Espace d'administration de Zythologue. Gérez le catalogue depuis
+              la page{" "}
+              <Link to="/bieres" className="underline underline-offset-4">
+                Bières
+              </Link>
+              .
             </CardDescription>
           </CardHeader>
         </Card>

@@ -40,7 +40,6 @@ export function RegisterForm({
     event.preventDefault();
     reset(); // efface l'erreur API de la tentative précédente
     const data = parse(event.currentTarget);
-    // confirmPassword part aussi : l'API ignore les clés qu'elle ne connaît pas
     if (data) mutate(data);
   }
 

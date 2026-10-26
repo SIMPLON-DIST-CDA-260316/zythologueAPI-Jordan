@@ -18,6 +18,13 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
     },
+    rules: {
+      // const { retiré, ...reste } = obj : retiré sert à exclure, pas à être lu
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { ignoreRestSiblings: true },
+      ],
+    },
   },
   {
     files: ["src/shared/ui/**/*.tsx"],
