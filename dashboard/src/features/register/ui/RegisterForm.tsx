@@ -1,6 +1,7 @@
 import { cn } from "cn";
 
 import { register } from "@/entities/session";
+import { useFormValidation } from "@/shared/lib/hooks/use-form-validation";
 import { Button } from "@/shared/ui/button";
 import {
   Card,
@@ -14,14 +15,11 @@ import {
   FieldDescription,
   FieldError,
   FieldGroup,
-  FieldLabel,
 } from "@/shared/ui/field";
-import { Input } from "@/shared/ui/input";
+import { FormField } from "@/shared/ui/form-field";
 import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
-import { z } from "zod";
 import { registerFormSchema } from "../model/schema";
 
 export function RegisterForm({
@@ -29,9 +27,6 @@ export function RegisterForm({
   ...props
 }: React.ComponentProps<"div">) {
   const navigate = useNavigate();
-  // Seules les erreurs Zod restent en state local : chargement et erreurs API
-  // sont gérés par la mutation
-  const [zodErrors, setZodErrors] = useState<Record<string, string[]>>({});
   const { mutate, isPending, error, reset } = useMutation({
     mutationFn: register,
     onSuccess: () => {
@@ -39,28 +34,14 @@ export function RegisterForm({
       navigate("/login");
     },
   });
-
-  const formError = error?.message;
-  const fieldErrors = { ...error?.fieldErrors, ...zodErrors };
-
-  // FieldError attend [{ message }], l'API renvoie ["…"] : on convertit
-  const errorsFor = (name: string) =>
-    fieldErrors[name]?.map((message) => ({ message }));
+  const { parse, errorsFor } = useFormValidation(registerFormSchema, error);
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     reset(); // efface l'erreur API de la tentative précédente
-
-    const result = registerFormSchema.safeParse(
-      Object.fromEntries(new FormData(event.currentTarget)),
-    );
-    if (!result.success) {
-      setZodErrors(z.flattenError(result.error).fieldErrors);
-      return;
-    }
-    setZodErrors({});
+    const data = parse(event.currentTarget);
     // confirmPassword part aussi : l'API ignore les clés qu'elle ne connaît pas
-    mutate(result.data);
+    if (data) mutate(data);
   }
 
   return (
@@ -78,84 +59,58 @@ export function RegisterForm({
           <form onSubmit={handleSubmit} noValidate>
             <FieldGroup>
               <Field className="grid grid-cols-2 gap-4">
-                <Field>
-                  <FieldLabel htmlFor="firstName">Prénom</FieldLabel>
-                  <Input
-                    id="firstName"
-                    type="text"
-                    name="firstName"
-                    maxLength={100}
-                    required
-                    aria-invalid={!!fieldErrors.firstName}
-                  />
-                  <FieldError errors={errorsFor("firstName")} />
-                </Field>
-                <Field>
-                  <FieldLabel htmlFor="lastName">Nom</FieldLabel>
-                  <Input
-                    id="lastName"
-                    type="text"
-                    name="lastName"
-                    maxLength={100}
-                    required
-                    aria-invalid={!!fieldErrors.lastName}
-                  />
-                  <FieldError errors={errorsFor("lastName")} />
-                </Field>
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="email">Email</FieldLabel>
-                <Input
-                  id="email"
-                  type="email"
-                  name="email"
-                  placeholder="email@example.com"
-                  maxLength={255}
+                <FormField
+                  name="firstName"
+                  label="Prénom"
+                  type="text"
+                  maxLength={100}
                   required
-                  aria-invalid={!!fieldErrors.email}
+                  errors={errorsFor("firstName")}
                 />
-                <FieldError errors={errorsFor("email")} />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="birthDate">Date de naissance</FieldLabel>
-                <Input
-                  id="birthDate"
-                  type="date"
-                  name="birthDate"
-                  min="1900-01-01"
+                <FormField
+                  name="lastName"
+                  label="Nom"
+                  type="text"
+                  maxLength={100}
                   required
-                  aria-invalid={!!fieldErrors.birthDate}
+                  errors={errorsFor("lastName")}
                 />
-                <FieldError errors={errorsFor("birthDate")} />
               </Field>
+              <FormField
+                name="email"
+                label="Email"
+                type="email"
+                placeholder="email@example.com"
+                maxLength={255}
+                required
+                errors={errorsFor("email")}
+              />
+              <FormField
+                name="birthDate"
+                label="Date de naissance"
+                type="date"
+                min="1900-01-01"
+                required
+                errors={errorsFor("birthDate")}
+              />
               <Field>
                 <Field className="grid grid-cols-2 gap-4">
-                  <Field>
-                    <FieldLabel htmlFor="password">Mot de passe</FieldLabel>
-                    <Input
-                      id="password"
-                      type="password"
-                      name="password"
-                      minLength={8}
-                      maxLength={255}
-                      required
-                      aria-invalid={!!fieldErrors.password}
-                    />
-                    <FieldError errors={errorsFor("password")} />
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor="confirmPassword">
-                      Confirmer mot de passe
-                    </FieldLabel>
-                    <Input
-                      id="confirmPassword"
-                      type="password"
-                      name="confirmPassword"
-                      required
-                      aria-invalid={!!fieldErrors.confirmPassword}
-                    />
-                    <FieldError errors={errorsFor("confirmPassword")} />
-                  </Field>
+                  <FormField
+                    name="password"
+                    label="Mot de passe"
+                    type="password"
+                    minLength={8}
+                    maxLength={255}
+                    required
+                    errors={errorsFor("password")}
+                  />
+                  <FormField
+                    name="confirmPassword"
+                    label="Confirmer mot de passe"
+                    type="password"
+                    required
+                    errors={errorsFor("confirmPassword")}
+                  />
                 </Field>
                 <FieldDescription>
                   8 caractères minimum, avec une majuscule, une minuscule, un
@@ -163,7 +118,7 @@ export function RegisterForm({
                 </FieldDescription>
               </Field>
               <Field>
-                {formError && <FieldError>{formError}</FieldError>}
+                {error && <FieldError>{error.message}</FieldError>}
                 <Button
                   type="submit"
                   className="cursor-pointer"
