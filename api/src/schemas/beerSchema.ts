@@ -18,6 +18,8 @@ export const getBeersQuerySchema = z
       .enum(["true", "false"])
       .optional()
       .transform((v) => (v === undefined ? undefined : v === "true")),
+    // Vide (barre de recherche effacée) = pas de filtre, géré par le repository
+    search: z.string().trim().max(100).optional(),
     sortBy: z.enum(["price", "alcoholLevel"]).optional(),
     order: z.enum(["asc", "desc"]).default("asc"),
     page: z.coerce.number().int().positive().default(1),

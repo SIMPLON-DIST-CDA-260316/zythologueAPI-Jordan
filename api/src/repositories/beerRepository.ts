@@ -2,6 +2,9 @@ import type { Pool } from "pg";
 import { Beer, type BeerRow } from "../models/beer.ts";
 import type { CreateBeerInput } from "../schemas/beerSchema.ts";
 
+// % et _ sont des jokers de LIKE : sans échappement, chercher "%" renverrait tout
+const escapeLike = (value: string) => value.replace(/[\\%_]/g, "\\$&");
+
 export class BeerRepository {
   private readonly pool: Pool;
 
@@ -14,6 +17,7 @@ export class BeerRepository {
     categoryId?: number;
     ingredientId?: number;
     isAlcoholFree?: boolean;
+    search?: string;
     sortBy?: "price" | "alcoholLevel";
     order: "asc" | "desc";
     page: number;
@@ -31,6 +35,8 @@ export class BeerRepository {
     // categoryId/ingredientId passent par une sous-requête IN plutôt qu'un
     // JOIN direct : évite de doublonner les lignes beer (une bière peut avoir
     // plusieurs catégories/ingrédients), sans avoir besoin de GROUP BY ici.
+    // shortcut: ILIKE '%…%' parcourt toute la table (pas d'index possible),
+    // passer à un index pg_trgm si le catalogue dépasse quelques milliers de bières
     const result = await this.pool.query<BeerRow & { total: string }>(
       `SELECT be.id, be.name, be.description, be.price, be.alcohol_level, be.is_alcohol_free,
               br.name AS "breweryName", be.brewery_id AS "breweryId", COUNT(*) OVER() AS total
@@ -39,6 +45,7 @@ export class BeerRepository {
          AND ($2::boolean IS NULL OR be.is_alcohol_free = $2)
          AND ($5::int IS NULL OR be.id IN (SELECT beer_id FROM beer_category WHERE category_id = $5))
          AND ($6::int IS NULL OR be.id IN (SELECT beer_id FROM beer_ingredient WHERE ingredient_id = $6))
+         AND ($7::text IS NULL OR be.name ILIKE '%' || $7 || '%' ESCAPE '\\')
        ORDER BY ${sortColumn} ${direction}
        LIMIT $3 OFFSET $4`,
       [
@@ -48,6 +55,7 @@ export class BeerRepository {
         offset,
         filters.categoryId ?? null,
         filters.ingredientId ?? null,
+        filters.search ? escapeLike(filters.search) : null,
       ],
     );
 

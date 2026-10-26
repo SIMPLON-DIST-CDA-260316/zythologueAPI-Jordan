@@ -132,12 +132,15 @@ Récupère une liste paginée de bières, avec filtrage et tri optionnels.
 | `categoryId` | number | entier positif | — | Filtre les bières associées à une catégorie donnée |
 | `ingredientId` | number | entier positif | — | Filtre les bières associées à un ingrédient donné |
 | `isAlcoholFree` | boolean | `true` \| `false` | — | Filtre par présence/absence d'alcool |
+| `search` | string | 100 caractères max | — | Recherche dans le nom, insensible à la casse ; vide = pas de filtre |
 | `sortBy` | string | `price` \| `alcoholLevel` | tri par `id` | Champ de tri |
 | `order` | string | `asc` \| `desc` | `asc` | Sens du tri |
 | `page` | number | entier positif | `1` | Numéro de page |
 | `limit` | number | entier positif, max 100 | `5` | Nombre de résultats par page |
 
 **Exemple** : `GET /api/v1/beers?breweryId=2&sortBy=price&order=desc&page=1&limit=5`
+
+**Exemple de recherche** : `GET /api/v1/beers?search=chimay&isAlcoholFree=false`
 
 **Réponses**
 

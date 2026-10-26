@@ -552,6 +552,13 @@ export const openapiSpec = {
             schema: { type: "string", enum: ["true", "false"] },
           },
           {
+            name: "search",
+            in: "query",
+            description:
+              "Recherche dans le nom, insensible à la casse (vide = pas de filtre)",
+            schema: { type: "string", maxLength: 100 },
+          },
+          {
             name: "sortBy",
             in: "query",
             description: "Champ de tri (défaut : tri par id)",
