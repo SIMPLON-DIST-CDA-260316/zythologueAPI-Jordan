@@ -1,4 +1,6 @@
 {
+  "name": "api",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev:app": "tsx watch src/app.ts",
@@ -7,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@zythologue/shared": "*",
     "argon2": "^0.45.1",
     "express": "^5.2.1",
     "express-rate-limit": "^8.7.0",
@@ -16,7 +19,7 @@
     "pg": "^8.22.0",
     "sharp": "^0.35.4",
     "swagger-ui-express": "^5.0.1",
-    "zod": "^4.4.3"
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",

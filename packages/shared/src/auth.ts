@@ -1,11 +1,10 @@
 import { z } from "zod";
 
-// ponytail: règles recopiées de api/src/schemas/authSchema.ts (même messages),
-// à extraire dans un package partagé si elles se mettent à diverger.
+// Source unique des règles, importée par l'API et le dashboard.
 // Côté front, Zod sert l'UX ; l'API revalide tout et reste l'autorité.
 
 const emailSchema = z
-  .string()
+  .string("Ce champ doit être une chaîne de caractères")
   .trim()
   .max(255)
   .toLowerCase()
@@ -23,8 +22,10 @@ export const registerSchema = z.object({
     .min(1, "Ce champ doit comprendre au moins 1 caractère")
     .max(100, "Ce champ ne peut pas comprendre plus de 100 caractères"),
   email: emailSchema,
+  // abort : sans lui, les refine tournent aussi sur une date mal formée
+  // et ajoutent un second message (« 18 ans ») à « date invalide »
   birthDate: z.iso
-    .date("La date de naissance doit être valide")
+    .date({ message: "La date de naissance doit être valide", abort: true })
     .refine(
       (date) => {
         const today = new Date();

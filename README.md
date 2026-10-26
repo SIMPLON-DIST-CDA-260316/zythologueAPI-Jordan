@@ -8,10 +8,11 @@ API REST de gestion de bières, développée dans le cadre du brief "Zythologue"
 |---|---|
 | [`api/`](api/) | API REST (Express), avec son `Dockerfile` |
 | [`dashboard/`](dashboard/) | Front React (Vite), avec son `Dockerfile` |
+| [`packages/shared/`](packages/shared/) | Schémas Zod communs à l'API et au dashboard (`@zythologue/shared`) |
 | [`bruno/`](bruno/) | Collection de requêtes Bruno |
 | [`UML/`](UML/) | Diagrammes de séquence |
 
-`docker-compose.yml`, `.env` et le `package.json` des scripts de lancement sont à la racine.
+`docker-compose.yml`, `.env`, le `package.json` des scripts de lancement et l'unique `package-lock.json` sont à la racine. Le dépôt est un monorepo en **npm workspaces** (`api`, `dashboard`, `packages/*`) : les dépendances sont installées une seule fois dans le `node_modules` de la racine, ce qui permet au package partagé d'importer `zod` depuis l'API comme depuis le dashboard.
 
 ## Stack technique
 
@@ -51,7 +52,7 @@ Chaque route suit la même chaîne de responsabilité :
      node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
      ```
    - `NODE_ENV` vaut `development` par défaut. En `production`, le cookie d'authentification reçoit l'attribut `Secure` (envoyé uniquement en HTTPS).
-2. Démarrer tous les services (aucun `npm install` nécessaire à la racine) :
+2. Démarrer tous les services (aucun `npm install` nécessaire : chaque image installe ses dépendances au build ; un `npm install` à la racine sert seulement à l'éditeur et à `tsc`/`eslint` en local) :
    ```
    npm run dev
    ```
@@ -73,7 +74,7 @@ Chaque route suit la même chaîne de responsabilité :
 | Dashboard | `http://localhost:5173` |
 | API | `http://localhost:3000/api/v1/beers` |
 | Swagger UI | `http://localhost:3000/api-docs` |
-| Adminer | `http://localhost:8080` |
+| Adminer | `http://localhost:8081` |
 
 **Hot reload** : il repose sur [Compose Watch](https://docs.docker.com/compose/how-tos/file-watch/) (section `develop.watch` du compose). Compose copie chaque fichier modifié dans le conteneur, où Vite (HMR) et `tsx watch` le détectent. Ça fonctionne de la même manière sous Linux et sous Windows, même avec le projet sur `C:\`. Une modification de `package.json` reconstruit l'image automatiquement. Sans `--watch` (par exemple avec un simple `docker compose up`), les conteneurs tournent sur le code copié au build.
 

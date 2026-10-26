@@ -1,6 +1,6 @@
 services:
   api:
-    build: ./api
+    build: { context: ., dockerfile: api/Dockerfile }
     ports:
       - "3000:3000"
     environment:
@@ -9,7 +9,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       NODE_ENV: ${NODE_ENV:-development}
     volumes:
-      - ./api/uploads:/app/uploads
+      - ./api/uploads:/repo/api/uploads
     depends_on:
       db:
         condition: service_healthy
@@ -17,15 +17,22 @@ services:
       watch:
         - action: sync
           path: ./api/src
-          target: /app/src
+          target: /repo/api/src
         - action: sync
           path: ./api/scripts
-          target: /app/scripts
+          target: /repo/api/scripts
+        - action: sync
+          path: ./packages/shared
+          target: /repo/packages/shared
+        - action: rebuild
+          path: ./packages/shared/package.json
         - action: rebuild
           path: ./api/package.json
+        - action: rebuild
+          path: ./package-lock.json
 
   dashboard:
-    build: ./dashboard
+    build: { context: ., dockerfile: dashboard/Dockerfile }
     ports:
       - "5173:5173"
     depends_on:
@@ -34,9 +41,16 @@ services:
       watch:
         - action: sync
           path: ./dashboard
-          target: /app
+          target: /repo/dashboard
+        - action: sync
+          path: ./packages/shared
+          target: /repo/packages/shared
+        - action: rebuild
+          path: ./packages/shared/package.json
         - action: rebuild
           path: ./dashboard/package.json
+        - action: rebuild
+          path: ./package-lock.json
 
   db:
     image: postgres:18-alpine
@@ -63,7 +77,7 @@ services:
     image: adminer:latest
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "8081:8080"
     environment:
       ADMINER_DEFAULT_SERVER: db:${POSTGRES_PORT}
     depends_on:

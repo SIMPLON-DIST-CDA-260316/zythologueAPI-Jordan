@@ -5,5 +5,10 @@
     "down": "docker compose down",
     "db:migrate": "docker compose exec api npm run migrate",
     "db:seed": "docker compose exec api npm run seed"
-  }
+  },
+  "workspaces": [
+    "api",
+    "dashboard",
+    "packages/*"
+  ]
 }

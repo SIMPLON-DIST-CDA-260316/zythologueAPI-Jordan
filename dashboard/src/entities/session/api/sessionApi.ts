@@ -1,5 +1,5 @@
 import { ApiError, apiFetch } from "@/shared/api";
-import type { LoginInput, RegisterInput } from "../model/schemas";
+import type { LoginInput, RegisterInput } from "@zythologue/shared";
 import type { User } from "../model/types";
 
 export const register = (input: RegisterInput) =>

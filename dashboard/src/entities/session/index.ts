@@ -12,5 +12,5 @@ export {
   registerSchema,
   type LoginInput,
   type RegisterInput,
-} from "./model/schemas";
+} from "@zythologue/shared";
 export type { User } from "./model/types";
