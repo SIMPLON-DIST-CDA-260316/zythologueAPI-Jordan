@@ -1,23 +1,39 @@
-import { beerQueries } from "@/entities/beer";
+import { beerQueries, type Beer } from "@/entities/beer";
+import { DeleteBeerDialog } from "@/features/delete-beer";
 import { DataTable } from "@/shared/ui/data-table";
 import { DataTablePagination } from "@/shared/ui/data-table-pagination";
 import { SiteHeader } from "@/widgets/site-header";
 import { useQuery } from "@tanstack/react-query";
 import type { OnChangeFn, SortingState } from "@tanstack/react-table";
 import { cn } from "cn";
+import { useEffect, useMemo, useState } from "react";
 import { useBeerSearchParams } from "../model/useBeerSearchParams";
 import { BeersToolbar } from "./BeersToolbar";
-import { columns } from "./columns";
+import { getBeerColumns } from "./columns";
 
 const PAGE_SIZE = 10;
 
 export function BeersPage() {
   // Tout l'état de la liste vit dans l'URL : F5, retour arrière, lien partagé
   const { params, setParams, clearParams } = useBeerSearchParams();
+  const [beerToDelete, setBeerToDelete] = useState<Beer | null>(null);
+  const columns = useMemo(
+    () => getBeerColumns({ onDelete: setBeerToDelete }),
+    [],
+  );
 
   const { data, isPending, isError, error, isPlaceholderData } = useQuery(
     beerQueries.list({ ...params, limit: PAGE_SIZE }),
   );
+
+  // Page au-delà de la dernière (dernière bière d'une page supprimée,
+  // ?page=99) : retour à la dernière page existante
+  const lastPage = data ? Math.max(data.totalPages, 1) : undefined;
+  useEffect(() => {
+    if (lastPage && !isPlaceholderData && params.page > lastPage) {
+      setParams({ page: lastPage });
+    }
+  }, [lastPage, isPlaceholderData, params.page, setParams]);
 
   // URL (sortBy + order) ↔ état de tri de TanStack Table ([{ id, desc }])
   const sorting: SortingState = params.sortBy
@@ -67,6 +83,10 @@ export function BeersPage() {
           </>
         )}
       </div>
+      <DeleteBeerDialog
+        beer={beerToDelete}
+        onClose={() => setBeerToDelete(null)}
+      />
     </>
   );
 }

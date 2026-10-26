@@ -1,17 +1,35 @@
-import { AuthProvider } from "@/entities/session";
+import { AuthProvider, ME_QUERY_KEY } from "@/entities/session";
 import { BeersPage } from "@/pages/beers";
 import { DashboardPage } from "@/pages/dashboard";
 import { ForbiddenPage } from "@/pages/forbidden";
 import { LoginPage } from "@/pages/login";
 import { RegisterPage } from "@/pages/register";
+import type { ApiError } from "@/shared/api";
 import { Toaster } from "@/shared/ui/sonner";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  MutationCache,
+  QueryCache,
+  QueryClient,
+  QueryClientProvider,
+} from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router";
+import { toast } from "sonner";
 import { GuestOnly, RequireAdmin, RequireAuth } from "./guards";
 import { AdminLayout } from "./layouts/AdminLayout";
 
+// Session expirée en cours d'utilisation : on vide l'utilisateur du cache,
+// les guards redirigent vers /login (getMe gère déjà son propre 401)
+function handleUnauthorized(error: ApiError) {
+  if (error.status !== 401) return;
+  queryClient.setQueryData(ME_QUERY_KEY, null);
+  toast.error("Session expirée, reconnectez-vous", { id: "session-expired" });
+}
+
 // Hors du composant : un seul cache pour toute la durée de vie de l'app
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  queryCache: new QueryCache({ onError: handleUnauthorized }),
+  mutationCache: new MutationCache({ onError: handleUnauthorized }),
+});
 
 export function App() {
   return (
