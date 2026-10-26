@@ -66,11 +66,7 @@ export function LoginForm({
               />
               <Field>
                 {error && <FieldError>{error.message}</FieldError>}
-                <Button
-                  type="submit"
-                  className="cursor-pointer"
-                  disabled={isPending}
-                >
+                <Button type="submit" disabled={isPending}>
                   {isPending ? "Connexion…" : "Se connecter"}
                 </Button>
                 <FieldDescription className="text-center">

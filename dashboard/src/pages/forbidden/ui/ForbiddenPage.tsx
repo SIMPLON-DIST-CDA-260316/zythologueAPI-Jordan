@@ -31,7 +31,7 @@ export function ForbiddenPage() {
           <CardContent>
             <Button
               variant="outline"
-              className="w-full cursor-pointer"
+              className="w-full"
               onClick={() => logout()}
             >
               Se déconnecter

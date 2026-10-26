@@ -118,11 +118,7 @@ export function RegisterForm({
               </Field>
               <Field>
                 {error && <FieldError>{error.message}</FieldError>}
-                <Button
-                  type="submit"
-                  className="cursor-pointer"
-                  disabled={isPending}
-                >
+                <Button type="submit" disabled={isPending}>
                   {isPending ? "Création…" : "Créer un compte"}
                 </Button>
 
