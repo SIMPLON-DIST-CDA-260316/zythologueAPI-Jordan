@@ -2,7 +2,10 @@ import { Router } from "express";
 import { AuthController } from "../../controllers/authController.ts";
 import { pool } from "../../db.ts";
 import { authenticate } from "../../middlewares/auth.ts";
-import { loginRateLimiter } from "../../middlewares/rateLimit.ts";
+import {
+  loginRateLimiter,
+  registerRateLimiter,
+} from "../../middlewares/rateLimit.ts";
 import { validate } from "../../middlewares/validate.ts";
 import { AuthRepository } from "../../repositories/authRepository.ts";
 import { loginSchema, registerSchema } from "../../schemas/authSchema.ts";
@@ -16,7 +19,9 @@ const router = Router();
 
 router.post(
   "/register",
+  // Après validate : un body invalide ne coûte pas de hash, il ne consomme pas le quota
   validate(registerSchema, "body"),
+  registerRateLimiter,
   authController.register,
 );
 

@@ -1,0 +1,33 @@
+meta {
+  name: Create beer - too many decimals
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/beers
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Bière Arrondie",
+    "price": 1.234,
+    "alcoholLevel": 0.46,
+    "isAlcoholFree": true,
+    "breweryId": 1
+  }
+}
+
+docs {
+  alcohol_level est en NUMERIC(4,1) : 0.46 serait enregistré 0.5, une bière
+  à 0,5 % marquée sans alcool. Même chose pour price en NUMERIC(6,2).
+  Nécessite le cookie admin (authorization/Login admin).
+}
+
+assert {
+  res.status: eq 400
+  res.body.errors.fieldErrors.alcoholLevel: isDefined
+  res.body.errors.fieldErrors.price: isDefined
+}

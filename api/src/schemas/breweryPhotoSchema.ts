@@ -1,14 +1,9 @@
 import { z } from "zod";
+import { idSchema } from "./idSchema.ts";
 
 export const breweryPhotoParamsSchema = z.object({
-  id: z.coerce
-    .number("L'identifiant n'est pas conforme")
-    .int("L'identifiant n'est pas conforme")
-    .positive("L'identifiant n'est pas conforme"),
-  photoId: z.coerce
-    .number("L'identifiant n'est pas conforme")
-    .int("L'identifiant n'est pas conforme")
-    .positive("L'identifiant n'est pas conforme"),
+  id: idSchema,
+  photoId: idSchema,
 });
 
 export type BreweryPhotoParams = z.infer<typeof breweryPhotoParamsSchema>;

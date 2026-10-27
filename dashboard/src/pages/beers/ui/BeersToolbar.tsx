@@ -1,6 +1,6 @@
 import { breweryQueries } from "@/entities/brewery";
 import { Button } from "@/shared/ui/button";
-import { Input } from "@/shared/ui/input";
+import { SearchInput } from "@/shared/ui/search-input";
 import {
   Select,
   SelectContent,
@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from "@/shared/ui/select";
 import { useQuery } from "@tanstack/react-query";
-import { SearchIcon, XIcon } from "lucide-react";
+import { XIcon } from "lucide-react";
 import type { BeerSearchParams } from "../model/useBeerSearchParams";
 
 // Valeur sentinelle des Select pour « pas de filtre » (retirée de l'URL)
@@ -44,34 +44,14 @@ export function BeersToolbar({
     params.isAlcoholFree !== undefined ||
     params.sortBy !== undefined;
 
-  function handleSearch(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const search = new FormData(event.currentTarget).get("search");
-    setParams({ search: typeof search === "string" ? search.trim() : "" });
-  }
-
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {/* Recherche validée par Entrée : une requête par recherche, pas par
-          frappe. La key resynchronise le champ quand l'URL change (retour,
-          réinitialisation) */}
-      <form
-        key={params.search ?? ""}
-        role="search"
-        onSubmit={handleSearch}
-        className="relative w-full sm:w-64"
-      >
-        <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          type="search"
-          name="search"
-          defaultValue={params.search}
-          placeholder="Rechercher une bière…"
-          aria-label="Rechercher une bière par son nom"
-          maxLength={100}
-          className="pl-8"
-        />
-      </form>
+      <SearchInput
+        value={params.search}
+        onSearch={(search) => setParams({ search })}
+        placeholder="Rechercher une bière…"
+        label="Rechercher une bière par son nom"
+      />
 
       <Select
         items={breweryItems}

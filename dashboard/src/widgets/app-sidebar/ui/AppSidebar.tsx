@@ -9,14 +9,25 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/shared/ui/sidebar";
-import { BeerIcon, LayoutDashboardIcon, ListIcon } from "lucide-react";
+import {
+  BeerIcon,
+  FactoryIcon,
+  HistoryIcon,
+  LayoutDashboardIcon,
+  ListIcon,
+  TagIcon,
+  WheatIcon,
+} from "lucide-react";
 import { Link, useLocation } from "react-router";
 import { NavUser } from "./NavUser";
 
-// Brasseries, catégories et ingrédients s'ajouteront ici avec leurs pages
 const navItems = [
   { title: "Tableau de bord", url: "/", icon: LayoutDashboardIcon },
   { title: "Bières", url: "/bieres", icon: ListIcon },
+  { title: "Brasseries", url: "/brasseries", icon: FactoryIcon },
+  { title: "Catégories", url: "/categories", icon: TagIcon },
+  { title: "Ingrédients", url: "/ingredients", icon: WheatIcon },
+  { title: "Journal", url: "/journal", icon: HistoryIcon },
 ];
 
 export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {

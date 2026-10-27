@@ -1,15 +1,15 @@
 import { beerQueries, type Beer } from "@/entities/beer";
 import { BeerFormSheet } from "@/features/beer-form";
 import { DeleteBeerDialog } from "@/features/delete-beer";
+import { useClampPage } from "@/shared/lib/hooks/use-list-search-params";
 import { Button } from "@/shared/ui/button";
 import { DataTable } from "@/shared/ui/data-table";
 import { DataTablePagination } from "@/shared/ui/data-table-pagination";
 import { SiteHeader } from "@/widgets/site-header";
 import { useQuery } from "@tanstack/react-query";
-import type { OnChangeFn, SortingState } from "@tanstack/react-table";
 import { cn } from "cn";
 import { PlusIcon } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useBeerSearchParams } from "../model/useBeerSearchParams";
 import { BeersToolbar } from "./BeersToolbar";
 import { getBeerColumns } from "./columns";
@@ -17,8 +17,8 @@ import { getBeerColumns } from "./columns";
 const PAGE_SIZE = 10;
 
 export function BeersPage() {
-  // Tout l'état de la liste vit dans l'URL : F5, retour arrière, lien partagé
-  const { params, setParams, clearParams } = useBeerSearchParams();
+  const { params, setParams, clearParams, sorting, onSortingChange } =
+    useBeerSearchParams();
   const [beerToDelete, setBeerToDelete] = useState<Beer | null>(null);
   // open séparé de beer : à la fermeture, le titre reste le bon pendant l'animation
   const [form, setForm] = useState<{ open: boolean; beer: Beer | null }>({
@@ -38,27 +38,9 @@ export function BeersPage() {
     beerQueries.list({ ...params, limit: PAGE_SIZE }),
   );
 
-  // Page au-delà de la dernière (dernière bière d'une page supprimée,
-  // ?page=99) : retour à la dernière page existante
-  const lastPage = data ? Math.max(data.totalPages, 1) : undefined;
-  useEffect(() => {
-    if (lastPage && !isPlaceholderData && params.page > lastPage) {
-      setParams({ page: lastPage });
-    }
-  }, [lastPage, isPlaceholderData, params.page, setParams]);
-
-  // URL (sortBy + order) ↔ état de tri de TanStack Table ([{ id, desc }])
-  const sorting: SortingState = params.sortBy
-    ? [{ id: params.sortBy, desc: params.order === "desc" }]
-    : [];
-
-  const handleSortingChange: OnChangeFn<SortingState> = (updater) => {
-    const [sort] = typeof updater === "function" ? updater(sorting) : updater;
-    setParams({
-      sortBy: sort?.id as "price" | "alcoholLevel" | undefined,
-      order: sort ? (sort.desc ? "desc" : "asc") : undefined,
-    });
-  };
+  useClampPage(params.page, data?.totalPages, isPlaceholderData, (page) =>
+    setParams({ page }),
+  );
 
   return (
     <>
@@ -85,7 +67,7 @@ export function BeersPage() {
               isLoading={isPending}
               emptyMessage="Aucune bière"
               sorting={sorting}
-              onSortingChange={handleSortingChange}
+              onSortingChange={onSortingChange}
               // Données de la page précédente affichées pendant le chargement
               className={cn(isPlaceholderData && "opacity-60")}
             />

@@ -5,6 +5,7 @@ import { z } from "zod";
 // multipleOf : sinon la base arrondit en silence (0.46 → 0.5, pourtant validé « sans alcool »).
 const MAX_PRICE = 9999.99;
 const MAX_ALCOHOL_LEVEL = 100;
+const MAX_ID = 2_147_483_647; // brewery_id INTEGER
 
 export const createBeerSchema = z
   .object({
@@ -28,7 +29,8 @@ export const createBeerSchema = z
     breweryId: z
       .number("Choisissez une brasserie")
       .int("Choisissez une brasserie")
-      .positive("Choisissez une brasserie"),
+      .positive("Choisissez une brasserie")
+      .max(MAX_ID, "Choisissez une brasserie"),
   })
   .refine((beer) => beer.isAlcoholFree === beer.alcoholLevel < 0.5, {
     message:
@@ -50,7 +52,7 @@ export const patchBeerSchema = z
       .multipleOf(0.1)
       .optional(),
     isAlcoholFree: z.boolean().optional(),
-    breweryId: z.number().int().positive().optional(),
+    breweryId: z.number().int().positive().max(MAX_ID).optional(),
   })
   .refine((beer) => Object.keys(beer).length > 0, {
     message: "Aucun champ à modifier",

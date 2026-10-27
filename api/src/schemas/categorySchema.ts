@@ -1,27 +1,15 @@
 import { z } from "zod";
+import { idSchema } from "./idSchema.ts";
 
-export const createCategorySchema = z.object({
-  name: z
-    .string("Ce champ doit être une chaîne de caractères")
-    .trim()
-    .min(1, "Le champ doit comprendre au moins 1 caractère")
-    .max(255),
-  description: z.string().trim().min(1),
-});
+// Schémas du body : partagés avec le dashboard (formulaire catégorie)
+export {
+  createCategorySchema,
+  patchCategorySchema,
+  type CreateCategoryInput,
+  type PatchCategoryInput,
+} from "@zythologue/shared";
 
-export type CreateCategoryInput = z.infer<typeof createCategorySchema>;
-
-export const patchCategorySchema = z
-  .object({
-    name: z.string().trim().min(1).max(255).optional(),
-    description: z.string().trim().min(1).optional(),
-  })
-  .refine((category) => Object.keys(category).length > 0, {
-    message: "Aucun champ à modifier",
-  });
-
-export type PatchCategoryInput = z.infer<typeof patchCategorySchema>;
-
+// Ici, seulement ce qui ne concerne que le serveur : query string et params
 export const getCategoriesQuerySchema = z
   .object({
     name: z.string().trim().min(1).optional(),
@@ -35,10 +23,7 @@ export const getCategoriesQuerySchema = z
 export type GetCategoriesQuery = z.infer<typeof getCategoriesQuerySchema>;
 
 export const categoryIdParamSchema = z.object({
-  id: z.coerce
-    .number("L'identifiant n'est pas conforme")
-    .int("L'identifiant n'est pas conforme")
-    .positive("L'identifiant n'est pas conforme"),
+  id: idSchema,
 });
 
 export type CategoryIdParam = z.infer<typeof categoryIdParamSchema>;

@@ -1,14 +1,7 @@
 import type { Beer } from "@/entities/beer";
-import { Button } from "@/shared/ui/button";
 import type { DataTableFeatures } from "@/shared/ui/data-table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/shared/ui/dropdown-menu";
+import { RowActions } from "@/shared/ui/row-actions";
 import { createColumnHelper } from "@tanstack/react-table";
-import { EllipsisVerticalIcon, PencilIcon, Trash2Icon } from "lucide-react";
 
 const euro = new Intl.NumberFormat("fr-FR", {
   style: "currency",
@@ -50,32 +43,11 @@ export const getBeerColumns = ({ onEdit, onDelete }: BeerColumnActions) =>
       id: "actions",
       header: () => <span className="sr-only">Actions</span>,
       cell: ({ row }) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label={`Actions pour ${row.original.name}`}
-              />
-            }
-          >
-            <EllipsisVerticalIcon />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onEdit(row.original)}>
-              <PencilIcon />
-              Modifier
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              variant="destructive"
-              onClick={() => onDelete(row.original)}
-            >
-              <Trash2Icon />
-              Supprimer
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <RowActions
+          label={row.original.name}
+          onEdit={() => onEdit(row.original)}
+          onDelete={() => onDelete(row.original)}
+        />
       ),
     }),
   ]);

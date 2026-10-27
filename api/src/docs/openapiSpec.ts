@@ -1,3 +1,5 @@
+import { MAX_ID } from "../schemas/idSchema.ts";
+
 const beerSchema = {
   type: "object",
   properties: {
@@ -8,11 +10,19 @@ const beerSchema = {
       nullable: true,
       description: "Description libre",
     },
-    price: { type: "number", minimum: 0, description: "Prix (≥ 0)" },
+    price: {
+      type: "number",
+      minimum: 0,
+      maximum: 9999.99,
+      multipleOf: 0.01,
+      description: "Prix en € (2 décimales max)",
+    },
     alcoholLevel: {
       type: "number",
       minimum: 0,
-      description: "Taux d'alcool en % (≥ 0)",
+      maximum: 100,
+      multipleOf: 0.1,
+      description: "Taux d'alcool en % (1 décimale max)",
     },
     isAlcoholFree: {
       type: "boolean",
@@ -287,7 +297,7 @@ const breweryIdParam = {
   in: "path",
   required: true,
   description: "Identifiant de la brasserie (entier positif)",
-  schema: { type: "integer", minimum: 1 },
+  schema: { type: "integer", minimum: 1, maximum: MAX_ID },
 };
 
 const errorSchema = {
@@ -363,7 +373,7 @@ const reviewIdParam = {
   in: "path",
   required: true,
   description: "Identifiant de l'avis (entier positif)",
-  schema: { type: "integer", minimum: 1 },
+  schema: { type: "integer", minimum: 1, maximum: MAX_ID },
 };
 
 const reviewNotFoundResponse = {
@@ -381,7 +391,7 @@ const idParam = {
   in: "path",
   required: true,
   description: "Identifiant de la bière (entier positif)",
-  schema: { type: "integer", minimum: 1 },
+  schema: { type: "integer", minimum: 1, maximum: MAX_ID },
 };
 
 const idInvalidResponse = {
@@ -439,7 +449,7 @@ const categoryIdParam = {
   in: "path",
   required: true,
   description: "Identifiant de la catégorie (entier positif)",
-  schema: { type: "integer", minimum: 1 },
+  schema: { type: "integer", minimum: 1, maximum: MAX_ID },
 };
 
 const categoryNotFoundResponse = {
@@ -467,7 +477,7 @@ const ingredientIdParam = {
   in: "path",
   required: true,
   description: "Identifiant de l'ingrédient (entier positif)",
-  schema: { type: "integer", minimum: 1 },
+  schema: { type: "integer", minimum: 1, maximum: MAX_ID },
 };
 
 const ingredientNotFoundResponse = {
@@ -531,19 +541,19 @@ export const openapiSpec = {
             name: "breweryId",
             in: "query",
             description: "Filtre les bières d'une brasserie donnée",
-            schema: { type: "integer", minimum: 1 },
+            schema: { type: "integer", minimum: 1, maximum: MAX_ID },
           },
           {
             name: "categoryId",
             in: "query",
             description: "Filtre les bières associées à une catégorie donnée",
-            schema: { type: "integer", minimum: 1 },
+            schema: { type: "integer", minimum: 1, maximum: MAX_ID },
           },
           {
             name: "ingredientId",
             in: "query",
             description: "Filtre les bières associées à un ingrédient donné",
-            schema: { type: "integer", minimum: 1 },
+            schema: { type: "integer", minimum: 1, maximum: MAX_ID },
           },
           {
             name: "isAlcoholFree",
@@ -617,7 +627,7 @@ export const openapiSpec = {
               "application/json": {
                 schema: { $ref: "#/components/schemas/Error" },
                 example: {
-                  message: "Paramètres de requête invalides",
+                  message: "Données invalides",
                   errors: {},
                 },
               },
@@ -645,8 +655,8 @@ export const openapiSpec = {
                     nullable: true,
                     description: "Non vide (après trim) si fourni, null accepté",
                   },
-                  price: { type: "number", minimum: 0 },
-                  alcoholLevel: { type: "number", minimum: 0 },
+                  price: { type: "number", minimum: 0, maximum: 9999.99, multipleOf: 0.01 },
+                  alcoholLevel: { type: "number", minimum: 0, maximum: 100, multipleOf: 0.1 },
                   isAlcoholFree: {
                     type: "boolean",
                     description:
@@ -655,6 +665,7 @@ export const openapiSpec = {
                   breweryId: {
                     type: "integer",
                     minimum: 1,
+                    maximum: MAX_ID,
                     description: "Doit correspondre à une brasserie existante",
                   },
                 },
@@ -737,10 +748,10 @@ export const openapiSpec = {
                 properties: {
                   name: { type: "string", maxLength: 255 },
                   description: { type: "string", nullable: true },
-                  price: { type: "number", minimum: 0 },
-                  alcoholLevel: { type: "number", minimum: 0 },
+                  price: { type: "number", minimum: 0, maximum: 9999.99, multipleOf: 0.01 },
+                  alcoholLevel: { type: "number", minimum: 0, maximum: 100, multipleOf: 0.1 },
                   isAlcoholFree: { type: "boolean" },
-                  breweryId: { type: "integer", minimum: 1 },
+                  breweryId: { type: "integer", minimum: 1, maximum: MAX_ID },
                 },
               },
               example: { price: 3.9 },
@@ -798,7 +809,7 @@ export const openapiSpec = {
               schema: {
                 type: "object",
                 properties: {
-                  categoryId: { type: "integer", minimum: 1 },
+                  categoryId: { type: "integer", minimum: 1, maximum: MAX_ID },
                 },
                 required: ["categoryId"],
               },
@@ -861,7 +872,7 @@ export const openapiSpec = {
             in: "path",
             required: true,
             description: "Identifiant de la catégorie (entier positif)",
-            schema: { type: "integer", minimum: 1 },
+            schema: { type: "integer", minimum: 1, maximum: MAX_ID },
           },
         ],
         responses: {
@@ -893,7 +904,7 @@ export const openapiSpec = {
               schema: {
                 type: "object",
                 properties: {
-                  ingredientId: { type: "integer", minimum: 1 },
+                  ingredientId: { type: "integer", minimum: 1, maximum: MAX_ID },
                 },
                 required: ["ingredientId"],
               },
@@ -956,7 +967,7 @@ export const openapiSpec = {
             in: "path",
             required: true,
             description: "Identifiant de l'ingrédient (entier positif)",
-            schema: { type: "integer", minimum: 1 },
+            schema: { type: "integer", minimum: 1, maximum: MAX_ID },
           },
         ],
         responses: {
@@ -1094,7 +1105,7 @@ export const openapiSpec = {
             in: "path",
             required: true,
             description: "Identifiant de la photo (entier positif)",
-            schema: { type: "integer", minimum: 1 },
+            schema: { type: "integer", minimum: 1, maximum: MAX_ID },
           },
         ],
         responses: {
@@ -1151,6 +1162,7 @@ export const openapiSpec = {
                   grade: { type: "integer", minimum: 1, maximum: 10 },
                   comment: {
                     type: "string",
+                    maxLength: 2000,
                     nullable: true,
                     description: "Non vide (après trim) si fourni",
                   },
@@ -1211,7 +1223,7 @@ export const openapiSpec = {
                 type: "object",
                 properties: {
                   grade: { type: "integer", minimum: 1, maximum: 10 },
-                  comment: { type: "string", nullable: true },
+                  comment: { type: "string", maxLength: 2000, nullable: true },
                 },
               },
               example: { comment: null },
@@ -1359,7 +1371,7 @@ export const openapiSpec = {
               "application/json": {
                 schema: { $ref: "#/components/schemas/Error" },
                 example: {
-                  message: "Paramètres de requête invalides",
+                  message: "Données invalides",
                   errors: {},
                 },
               },
@@ -1392,8 +1404,10 @@ export const openapiSpec = {
                   website: {
                     type: "string",
                     format: "uri",
+                    pattern: "^https?://",
+                    maxLength: 2048,
                     nullable: true,
-                    description: "URL valide si fourni, null accepté",
+                    description: "URL http(s) si fourni, null accepté",
                   },
                 },
                 required: ["name", "description", "country", "city"],
@@ -1469,7 +1483,13 @@ export const openapiSpec = {
                   description: { type: "string" },
                   country: { type: "string", maxLength: 100 },
                   city: { type: "string", maxLength: 100 },
-                  website: { type: "string", format: "uri", nullable: true },
+                  website: {
+                    type: "string",
+                    format: "uri",
+                    pattern: "^https?://",
+                    maxLength: 2048,
+                    nullable: true,
+                  },
                 },
               },
               example: { city: "Houffalize" },
@@ -1632,7 +1652,7 @@ export const openapiSpec = {
             in: "path",
             required: true,
             description: "Identifiant de la photo (entier positif)",
-            schema: { type: "integer", minimum: 1 },
+            schema: { type: "integer", minimum: 1, maximum: MAX_ID },
           },
         ],
         responses: {
@@ -1722,7 +1742,7 @@ export const openapiSpec = {
               "application/json": {
                 schema: { $ref: "#/components/schemas/Error" },
                 example: {
-                  message: "Paramètres de requête invalides",
+                  message: "Données invalides",
                   errors: {},
                 },
               },
@@ -1934,7 +1954,7 @@ export const openapiSpec = {
               "application/json": {
                 schema: { $ref: "#/components/schemas/Error" },
                 example: {
-                  message: "Paramètres de requête invalides",
+                  message: "Données invalides",
                   errors: {},
                 },
               },
@@ -2088,7 +2108,7 @@ export const openapiSpec = {
             name: "beerId",
             in: "query",
             description: "Filtre les entrées concernant une bière donnée",
-            schema: { type: "integer", minimum: 1 },
+            schema: { type: "integer", minimum: 1, maximum: MAX_ID },
           },
           {
             name: "order",
@@ -2145,7 +2165,7 @@ export const openapiSpec = {
               "application/json": {
                 schema: { $ref: "#/components/schemas/Error" },
                 example: {
-                  message: "Paramètres de requête invalides",
+                  message: "Données invalides",
                   errors: {},
                 },
               },
@@ -2241,6 +2261,25 @@ export const openapiSpec = {
               "application/json": {
                 schema: { $ref: "#/components/schemas/Error" },
                 example: { message: "Un compte existe déjà avec cet email" },
+              },
+            },
+          },
+          "429": {
+            description:
+              "Plus de 10 inscriptions valides en 15 minutes depuis la même IP (chaque inscription coûte un hash argon2). Les en-têtes RateLimit et Retry-After indiquent le délai restant.",
+            headers: {
+              "Retry-After": {
+                description: "Secondes avant de pouvoir réessayer",
+                schema: { type: "integer" },
+              },
+            },
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+                example: {
+                  message:
+                    "Trop d'inscriptions depuis cette adresse, réessayez dans 15 minutes",
+                },
               },
             },
           },

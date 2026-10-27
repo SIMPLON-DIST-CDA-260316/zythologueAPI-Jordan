@@ -1,33 +1,15 @@
 import { z } from "zod";
+import { idSchema } from "./idSchema.ts";
 
-export const createBrewerySchema = z.object({
-  name: z
-    .string("Ce champ doit être une chaîne de caractères")
-    .trim()
-    .min(1, "Le champ doit comprendre au moins 1 caractère")
-    .max(255),
-  description: z.string().trim().min(1),
-  country: z.string().trim().min(1).max(100),
-  city: z.string().trim().min(1).max(100),
-  website: z.url().max(2048).nullable().optional(),
-});
+// Schémas du body : partagés avec le dashboard (formulaire brasserie)
+export {
+  createBrewerySchema,
+  patchBrewerySchema,
+  type CreateBreweryInput,
+  type PatchBreweryInput,
+} from "@zythologue/shared";
 
-export type CreateBreweryInput = z.infer<typeof createBrewerySchema>;
-
-export const patchBrewerySchema = z
-  .object({
-    name: z.string().trim().min(1).max(255).optional(),
-    description: z.string().trim().min(1).optional(),
-    country: z.string().trim().min(1).max(100).optional(),
-    city: z.string().trim().min(1).max(100).optional(),
-    website: z.url().max(2048).nullable().optional(),
-  })
-  .refine((brewery) => Object.keys(brewery).length > 0, {
-    message: "Aucun champ à modifier",
-  });
-
-export type PatchBreweryInput = z.infer<typeof patchBrewerySchema>;
-
+// Ici, seulement ce qui ne concerne que le serveur : query string et params
 export const getBreweriesQuerySchema = z
   .object({
     country: z.string().trim().min(1).optional(),
@@ -43,10 +25,7 @@ export const getBreweriesQuerySchema = z
 export type GetBreweriesQuery = z.infer<typeof getBreweriesQuerySchema>;
 
 export const breweryIdParamSchema = z.object({
-  id: z.coerce
-    .number("L'identifiant n'est pas conforme")
-    .int("L'identifiant n'est pas conforme")
-    .positive("L'identifiant n'est pas conforme"),
+  id: idSchema,
 });
 
 export type BreweryIdParam = z.infer<typeof breweryIdParamSchema>;

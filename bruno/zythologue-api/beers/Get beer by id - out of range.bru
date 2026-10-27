@@ -1,0 +1,21 @@
+meta {
+  name: Get beer by id - out of range
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/beers/2147483648
+  body: none
+  auth: none
+}
+
+docs {
+  2147483648 dépasse le type INTEGER de Postgres : refusé par Zod (400)
+  au lieu de faire échouer la requête SQL (500).
+}
+
+assert {
+  res.status: eq 400
+  res.body.errors.fieldErrors.id: isDefined
+}

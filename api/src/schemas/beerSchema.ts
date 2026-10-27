@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { idSchema } from "./idSchema.ts";
 
 // Schémas du body : partagés avec le dashboard (formulaire bière)
 export {
@@ -11,9 +12,9 @@ export {
 // Ici, seulement ce qui ne concerne que le serveur : query string et params
 export const getBeersQuerySchema = z
   .object({
-    breweryId: z.coerce.number().int().positive().optional(),
-    categoryId: z.coerce.number().int().positive().optional(),
-    ingredientId: z.coerce.number().int().positive().optional(),
+    breweryId: idSchema.optional(),
+    categoryId: idSchema.optional(),
+    ingredientId: idSchema.optional(),
     isAlcoholFree: z
       .enum(["true", "false"])
       .optional()
@@ -30,10 +31,7 @@ export const getBeersQuerySchema = z
 export type GetBeersQuery = z.infer<typeof getBeersQuerySchema>;
 
 export const beerIdParamSchema = z.object({
-  id: z.coerce
-    .number("L'identifiant n'est pas conforme")
-    .int("L'identifiant n'est pas conforme")
-    .positive("L'identifiant n'est pas conforme"),
+  id: idSchema,
 });
 
 export type BeerIdParam = z.infer<typeof beerIdParamSchema>;

@@ -76,6 +76,8 @@ Chaque route suit la même chaîne de responsabilité :
 | Swagger UI | `http://localhost:3000/api-docs` |
 | Adminer | `http://localhost:8081` |
 
+API, Adminer et PostgreSQL ne sont publiés que sur `127.0.0.1` : ils ne sont accessibles que depuis la machine qui lance Docker, pas depuis le reste du réseau. Seul le dashboard (5173) est joignable depuis une autre machine, et il passe par le proxy Vite pour parler à l'API.
+
 **Hot reload** : il repose sur [Compose Watch](https://docs.docker.com/compose/how-tos/file-watch/) (section `develop.watch` du compose). Compose copie chaque fichier modifié dans le conteneur, où Vite (HMR) et `tsx watch` le détectent. Ça fonctionne de la même manière sous Linux et sous Windows, même avec le projet sur `C:\`. Une modification de `package.json` reconstruit l'image automatiquement. Sans `--watch` (par exemple avec un simple `docker compose up`), les conteneurs tournent sur le code copié au build.
 
 **Dashboard → API** : en développement, Vite relaie les requêtes `/api/*` vers le conteneur `api` (proxy dans [`dashboard/vite.config.ts`](dashboard/vite.config.ts)). Le front appelle donc `/api/v1/...` sur sa propre origine : pas de CORS, et le cookie d'authentification fonctionne sans configuration.
@@ -165,7 +167,7 @@ Récupère une liste paginée de bières, avec filtrage et tri optionnels.
 | Code | Cas | Corps |
 |---|---|---|
 | 200 | Succès | `{ data, page, limit, total, totalPages }` |
-| 400 | Query param invalide ou clé inconnue | `{ "message": "Paramètres de requête invalides", "errors": {...} }` |
+| 400 | Query param invalide ou clé inconnue | `{ "message": "Données invalides", "errors": {...} }` |
 
 ```json
 {
@@ -211,8 +213,8 @@ Crée une nouvelle bière.
 |---|---|---|---|
 | `name` | string | oui | non vide (après trim), 255 caractères max, doit être unique en base |
 | `description` | string \| null | non | non vide (après trim) si fourni, `null` accepté |
-| `price` | number | oui | ≥ 0 |
-| `alcoholLevel` | number | oui | ≥ 0 |
+| `price` | number | oui | 0 à 9999,99, 2 décimales max |
+| `alcoholLevel` | number | oui | 0 à 100, 1 décimale max |
 | `isAlcoholFree` | boolean | oui | doit correspondre à `alcoholLevel` : `true` si `alcoholLevel < 0.5`, `false` sinon |
 | `breweryId` | number | oui | entier positif, doit correspondre à une brasserie existante |
 
@@ -256,8 +258,8 @@ Modifie partiellement une bière existante. Seuls les champs envoyés dans le bo
 |---|---|---|
 | `name` | string | non vide (après trim), 255 caractères max, doit être unique en base |
 | `description` | string \| null | non vide (après trim) si fourni, `null` accepté (efface la description) |
-| `price` | number | ≥ 0 |
-| `alcoholLevel` | number | ≥ 0 |
+| `price` | number | 0 à 9999,99, 2 décimales max |
+| `alcoholLevel` | number | 0 à 100, 1 décimale max |
 | `isAlcoholFree` | boolean | doit rester cohérent avec `alcoholLevel` une fois fusionné aux valeurs actuelles de la bière |
 | `breweryId` | number | entier positif, doit correspondre à une brasserie existante |
 
@@ -354,7 +356,7 @@ Récupère une liste paginée de brasseries, avec filtrage et tri optionnels.
 | Code | Cas | Corps |
 |---|---|---|
 | 200 | Succès | `{ data, page, limit, total, totalPages }` |
-| 400 | Query param invalide ou clé inconnue | `{ "message": "Paramètres de requête invalides", "errors": {...} }` |
+| 400 | Query param invalide ou clé inconnue | `{ "message": "Données invalides", "errors": {...} }` |
 
 ```json
 {
@@ -402,7 +404,7 @@ Crée une nouvelle brasserie.
 | `description` | string | oui | non vide (après trim) |
 | `country` | string | oui | non vide (après trim), 100 caractères max |
 | `city` | string | oui | non vide (après trim), 100 caractères max |
-| `website` | string \| null | non | URL valide (2048 caractères max) si fourni, `null` accepté |
+| `website` | string \| null | non | URL `http(s)` valide (2048 caractères max) si fourni, `null` accepté |
 
 **Exemple de requête**
 
@@ -444,7 +446,7 @@ Modifie partiellement une brasserie existante. Seuls les champs envoyés dans le
 | `description` | string | non vide (après trim) |
 | `country` | string | non vide (après trim), 100 caractères max |
 | `city` | string | non vide (après trim), 100 caractères max |
-| `website` | string \| null | URL valide si fourni, `null` accepté (efface le site web) |
+| `website` | string \| null | URL `http(s)` valide si fourni, `null` accepté (efface le site web) |
 
 **Exemple de requête** (modification de la ville uniquement)
 
@@ -528,6 +530,7 @@ Crée un compte utilisateur. Le mot de passe est haché (argon2id) avant stockag
 | 201 | Compte créé | `{ id, lastName, firstName, email, birthDate, role, createdAt }` |
 | 400 | Body invalide (champ manquant, email invalide, mineur, mot de passe faible) | `{ "message": "Données invalides", "errors": {...} }` |
 | 409 | Un compte existe déjà avec cet email | `{ "message": "Un compte existe déjà avec cet email" }` |
+| 429 | Plus de 10 inscriptions valides en 15 min depuis la même IP | `{ "message": "Trop d'inscriptions depuis cette adresse, réessayez dans 15 minutes" }` |
 
 ---
 
@@ -648,7 +651,7 @@ Ajoute un avis de l'utilisateur connecté sur la bière.
 | Champ | Type | Obligatoire | Règles de validation |
 |---|---|---|---|
 | `grade` | number | oui | entier de 1 à 10 |
-| `comment` | string \| null | non | non vide (après trim) si fourni |
+| `comment` | string \| null | non | non vide (après trim), 2000 caractères max, si fourni |
 
 | Code | Cas |
 |---|---|
@@ -714,6 +717,8 @@ La collection [`bruno/zythologue-api/`](bruno/zythologue-api/) s'utilise avec l'
 - **`authorization/`** : scénario 401, puis 403, puis 201 sur le catalogue (anonyme, puis client, puis admin).
 - **`beers/reviews/`** : scénario complet des avis (auteur tiré du jeton, doublon, propriétaire, modération admin). Le scénario supprime l'avis qu'il crée : on peut le relancer.
 - Les requêtes d'écriture des autres dossiers (`beers/`, `categories/`…) demandent d'être connecté en admin : lancer d'abord `auth/Login admin`.
+- Requêtes de non-régression sur la validation : décimales de trop (`beers/Create beer - too many decimals`), id hors de la plage `INTEGER` (`beers/Get beer by id - out of range`), site web en `javascript:` (`breweries/Create brewery - javascript url`), commentaire de plus de 2000 caractères (`beers/reviews/Create review - comment too long`), clé inconnue sur le journal (`beer-logs/Get beer logs - invalid query`).
+- **Limite d'inscription** : chaque passage du dossier `auth/` envoie 3 inscriptions valides. Au-delà de 10 en 15 minutes, `Register` renvoie 429 : attendre, ou redémarrer l'API (le compteur est en mémoire).
 
 Les requêtes « anonymes » utilisent `{{anonBaseUrl}}` (`127.0.0.1` au lieu de `localhost`). Bruno range ses cookies par domaine, donc ces requêtes partent sans cookie, même si une session est ouverte sur `localhost`.
 

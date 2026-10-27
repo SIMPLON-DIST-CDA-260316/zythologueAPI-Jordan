@@ -1,14 +1,5 @@
 import { beerQueries, deleteBeer, type Beer } from "@/entities/beer";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/shared/ui/alert-dialog";
+import { ConfirmDeleteDialog } from "@/shared/ui/confirm-delete-dialog";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -34,29 +25,13 @@ export function DeleteBeerDialog({ beer, onClose }: DeleteBeerDialogProps) {
   });
 
   return (
-    <AlertDialog
+    <ConfirmDeleteDialog
       open={beer !== null}
-      onOpenChange={(open) => !open && !isPending && onClose()}
-    >
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Supprimer « {beer?.name} » ?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Ses avis, photos et entrées de journal seront aussi supprimés.
-            Cette action est irréversible.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={isPending}>Annuler</AlertDialogCancel>
-          <AlertDialogAction
-            variant="destructive"
-            disabled={isPending}
-            onClick={() => beer && mutate(beer.id)}
-          >
-            {isPending ? "Suppression…" : "Supprimer"}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+      title={`Supprimer « ${beer?.name} » ?`}
+      description="Ses avis, photos et entrées de journal seront aussi supprimés."
+      isPending={isPending}
+      onConfirm={() => beer && mutate(beer.id)}
+      onClose={onClose}
+    />
   );
 }

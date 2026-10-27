@@ -19,10 +19,25 @@ export function DashboardPage() {
           <CardHeader>
             <CardTitle>Bienvenue, {user?.firstName}</CardTitle>
             <CardDescription>
-              Espace d'administration de Zythologue. Gérez le catalogue depuis
-              la page{" "}
+              Espace d'administration de Zythologue. Gérez le catalogue (
               <Link to="/bieres" className="underline underline-offset-4">
-                Bières
+                bières
+              </Link>
+              ,{" "}
+              <Link to="/brasseries" className="underline underline-offset-4">
+                brasseries
+              </Link>
+              ,{" "}
+              <Link to="/categories" className="underline underline-offset-4">
+                catégories
+              </Link>
+              ,{" "}
+              <Link to="/ingredients" className="underline underline-offset-4">
+                ingrédients
+              </Link>
+              ) et consultez le{" "}
+              <Link to="/journal" className="underline underline-offset-4">
+                journal des ajouts
               </Link>
               .
             </CardDescription>

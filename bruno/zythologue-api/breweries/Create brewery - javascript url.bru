@@ -1,0 +1,32 @@
+meta {
+  name: Create brewery - javascript url
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/breweries
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Brasserie Piégée",
+    "description": "Une brasserie artisanale",
+    "country": "France",
+    "city": "Lille",
+    "website": "javascript:alert(document.cookie)"
+  }
+}
+
+docs {
+  z.url() accepte n'importe quel protocole : le schéma le restreint à http(s),
+  sinon un front qui affiche le site dans un <a href> exécuterait le script.
+  Nécessite le cookie admin (authorization/Login admin).
+}
+
+assert {
+  res.status: eq 400
+  res.body.errors.fieldErrors.website: isDefined
+}

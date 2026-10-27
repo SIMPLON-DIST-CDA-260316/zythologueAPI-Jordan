@@ -1,10 +1,8 @@
 import { z } from "zod";
+import { bodyIdSchema, idSchema } from "./idSchema.ts";
 
 export const createBeerIngredientSchema = z.object({
-  ingredientId: z
-    .number("L'identifiant n'est pas conforme")
-    .int()
-    .positive(),
+  ingredientId: bodyIdSchema,
 });
 
 export type CreateBeerIngredientInput = z.infer<
@@ -12,14 +10,8 @@ export type CreateBeerIngredientInput = z.infer<
 >;
 
 export const beerIngredientParamsSchema = z.object({
-  id: z.coerce
-    .number("L'identifiant n'est pas conforme")
-    .int("L'identifiant n'est pas conforme")
-    .positive("L'identifiant n'est pas conforme"),
-  ingredientId: z.coerce
-    .number("L'identifiant n'est pas conforme")
-    .int("L'identifiant n'est pas conforme")
-    .positive("L'identifiant n'est pas conforme"),
+  id: idSchema,
+  ingredientId: idSchema,
 });
 
 export type BeerIngredientParams = z.infer<typeof beerIngredientParamsSchema>;

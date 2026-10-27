@@ -1,0 +1,32 @@
+meta {
+  name: Create review - comment too long
+  type: http
+  seq: 17
+}
+
+post {
+  url: {{baseUrl}}/beers/2/reviews
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "grade": 7,
+    "comment": "{{longComment}}"
+  }
+}
+
+script:pre-request {
+  bru.setVar("longComment", "a".repeat(2001));
+}
+
+docs {
+  Commentaire limité à 2000 caractères. La validation passe avant la règle
+  « un avis par bière » : le 400 tombe même si l'utilisateur a déjà noté la bière.
+}
+
+assert {
+  res.status: eq 400
+  res.body.errors.fieldErrors.comment: isDefined
+}

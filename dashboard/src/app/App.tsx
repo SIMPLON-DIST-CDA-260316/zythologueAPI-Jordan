@@ -1,7 +1,11 @@
 import { AuthProvider, ME_QUERY_KEY } from "@/entities/session";
+import { BeerLogsPage } from "@/pages/beer-logs";
 import { BeersPage } from "@/pages/beers";
+import { BreweriesPage } from "@/pages/breweries";
+import { CategoriesPage } from "@/pages/categories";
 import { DashboardPage } from "@/pages/dashboard";
 import { ForbiddenPage } from "@/pages/forbidden";
+import { IngredientsPage } from "@/pages/ingredients";
 import { LoginPage } from "@/pages/login";
 import { RegisterPage } from "@/pages/register";
 import type { ApiError } from "@/shared/api";
@@ -42,6 +46,10 @@ export function App() {
                 <Route element={<AdminLayout />}>
                   <Route path="/" element={<DashboardPage />} />
                   <Route path="/bieres" element={<BeersPage />} />
+                  <Route path="/brasseries" element={<BreweriesPage />} />
+                  <Route path="/categories" element={<CategoriesPage />} />
+                  <Route path="/ingredients" element={<IngredientsPage />} />
+                  <Route path="/journal" element={<BeerLogsPage />} />
                 </Route>
               </Route>
               <Route path="/acces-refuse" element={<ForbiddenPage />} />

@@ -1,27 +1,15 @@
 import { z } from "zod";
+import { idSchema } from "./idSchema.ts";
 
-export const createIngredientSchema = z.object({
-  name: z
-    .string("Ce champ doit être une chaîne de caractères")
-    .trim()
-    .min(1, "Le champ doit comprendre au moins 1 caractère")
-    .max(255),
-  description: z.string().trim().min(1).nullable().optional(),
-});
+// Schémas du body : partagés avec le dashboard (formulaire ingrédient)
+export {
+  createIngredientSchema,
+  patchIngredientSchema,
+  type CreateIngredientInput,
+  type PatchIngredientInput,
+} from "@zythologue/shared";
 
-export type CreateIngredientInput = z.infer<typeof createIngredientSchema>;
-
-export const patchIngredientSchema = z
-  .object({
-    name: z.string().trim().min(1).max(255).optional(),
-    description: z.string().trim().min(1).nullable().optional(),
-  })
-  .refine((ingredient) => Object.keys(ingredient).length > 0, {
-    message: "Aucun champ à modifier",
-  });
-
-export type PatchIngredientInput = z.infer<typeof patchIngredientSchema>;
-
+// Ici, seulement ce qui ne concerne que le serveur : query string et params
 export const getIngredientsQuerySchema = z
   .object({
     name: z.string().trim().min(1).optional(),
@@ -35,10 +23,7 @@ export const getIngredientsQuerySchema = z
 export type GetIngredientsQuery = z.infer<typeof getIngredientsQuerySchema>;
 
 export const ingredientIdParamSchema = z.object({
-  id: z.coerce
-    .number("L'identifiant n'est pas conforme")
-    .int("L'identifiant n'est pas conforme")
-    .positive("L'identifiant n'est pas conforme"),
+  id: idSchema,
 });
 
 export type IngredientIdParam = z.infer<typeof ingredientIdParamSchema>;
