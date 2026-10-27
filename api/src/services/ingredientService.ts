@@ -1,4 +1,4 @@
-import { ConflictError, NotFoundError } from "../errors/httpError.ts";
+import { NotFoundError } from "../errors/httpError.ts";
 import type { Ingredient } from "../models/ingredient.ts";
 import type { IngredientRepository } from "../repositories/ingredientRepository.ts";
 import type {
@@ -51,13 +51,6 @@ export class IngredientService {
   }
 
   async addOne(ingredientInput: CreateIngredientInput): Promise<Ingredient> {
-    const ingredientNameExists =
-      await this.ingredientRepository.ingredientNameExists(
-        ingredientInput.name,
-      );
-    if (ingredientNameExists) {
-      throw new ConflictError("Un ingrédient de ce nom existe déjà");
-    }
     return this.ingredientRepository.addOne(ingredientInput);
   }
 
@@ -68,16 +61,6 @@ export class IngredientService {
     const currentIngredient =
       await this.ingredientRepository.findOneById(ingredientId);
     if (!currentIngredient) throw new NotFoundError("Ingrédient non trouvé");
-
-    if (patch.name !== undefined && patch.name !== currentIngredient.name) {
-      const nameExists = await this.ingredientRepository.ingredientNameExists(
-        patch.name,
-        ingredientId,
-      );
-      if (nameExists) {
-        throw new ConflictError("Un ingrédient de ce nom existe déjà");
-      }
-    }
 
     const mergedFields = {
       name: patch.name ?? currentIngredient.name,

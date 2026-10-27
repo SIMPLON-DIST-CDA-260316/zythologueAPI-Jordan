@@ -21,15 +21,6 @@ export class BreweryPhotoRepository {
     return result.rows.map(BreweryPhoto.fromRow);
   }
 
-  async findOneById(photoId: number): Promise<BreweryPhoto | null> {
-    const result = await this.pool.query<BreweryPhotoRow>(
-      `SELECT ${PHOTO_COLUMNS} FROM brewery_photo WHERE id = $1`,
-      [photoId],
-    );
-    const row = result.rows[0];
-    return row ? BreweryPhoto.fromRow(row) : null;
-  }
-
   async countByBreweryId(breweryId: number): Promise<number> {
     const result = await this.pool.query<{ count: string }>(
       `SELECT COUNT(*) AS count FROM brewery_photo WHERE brewery_id = $1`,

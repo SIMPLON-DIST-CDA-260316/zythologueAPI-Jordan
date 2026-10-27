@@ -1,4 +1,4 @@
-import { ConflictError, NotFoundError } from "../errors/httpError.ts";
+import { NotFoundError } from "../errors/httpError.ts";
 import type { Ingredient } from "../models/ingredient.ts";
 import type { BeerIngredientRepository } from "../repositories/beerIngredientRepository.ts";
 import type { IngredientRepository } from "../repositories/ingredientRepository.ts";
@@ -26,17 +26,6 @@ export class BeerIngredientService {
     const ingredient =
       await this.ingredientRepository.findOneById(ingredientId);
     if (!ingredient) throw new NotFoundError("Ingrédient non trouvé");
-
-    const alreadyAssociated =
-      await this.beerIngredientRepository.associationExists(
-        beerId,
-        ingredientId,
-      );
-    if (alreadyAssociated) {
-      throw new ConflictError(
-        "Cet ingrédient est déjà associé à cette bière",
-      );
-    }
 
     await this.beerIngredientRepository.addOne(beerId, ingredientId);
     return ingredient;

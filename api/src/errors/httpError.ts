@@ -32,12 +32,6 @@ export class ConflictError extends HttpError {
   }
 }
 
-export class PayloadTooLargeError extends HttpError {
-  constructor(message: string) {
-    super(413, message);
-  }
-}
-
 export class UnsupportedMediaTypeError extends HttpError {
   constructor(message: string) {
     super(415, message);

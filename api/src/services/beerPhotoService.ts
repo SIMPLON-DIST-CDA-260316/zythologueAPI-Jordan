@@ -5,7 +5,6 @@ import type { BeerPhotoRepository } from "../repositories/beerPhotoRepository.ts
 import {
   generatePhotoVariants,
   removeManagedFile,
-  throwOnImageValidationError,
   validateImage,
 } from "./imageService.ts";
 
@@ -40,8 +39,7 @@ export class BeerPhotoService {
     }
 
     // 3. Le contenu est-il réellement une image ? (aucune écriture disque ici)
-    const validationError = await validateImage(buffer);
-    throwOnImageValidationError(validationError);
+    await validateImage(buffer);
 
     // 4. Première écriture sur disque : des octets produits par Sharp.
     const generated = await generatePhotoVariants(buffer, BEER_PHOTO_TARGET);

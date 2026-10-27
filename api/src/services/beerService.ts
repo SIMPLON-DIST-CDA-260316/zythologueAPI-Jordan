@@ -1,4 +1,4 @@
-import { ConflictError, NotFoundError, BadRequestError } from "../errors/httpError.ts";
+import { NotFoundError, BadRequestError } from "../errors/httpError.ts";
 import type { Beer } from "../models/beer.ts";
 import type { BeerRepository } from "../repositories/beerRepository.ts";
 import type {
@@ -6,6 +6,7 @@ import type {
   GetBeersQuery,
   PatchBeerInput,
 } from "../schemas/beerSchema.ts";
+import { removeManagedFile } from "./imageService.ts";
 
 export class BeerService {
   private readonly beerRepository: BeerRepository;
@@ -37,9 +38,20 @@ export class BeerService {
     return beer;
   }
 
+  /**
+   * Même ordre que BreweryService.deleteOneById : URLs relevées avant le
+   * DELETE (cascade sur beer_photo), fichiers effacés une fois la ligne partie.
+   */
   async deleteOneById(beerId: number): Promise<void> {
+    const photoUrls = await this.beerRepository.findPhotoUrlsByBeerId(beerId);
+
     const deleted = await this.beerRepository.deleteOneById(beerId);
     if (!deleted) throw new NotFoundError("Bière non trouvée");
+
+    for (const photo of photoUrls) {
+      await removeManagedFile(photo.url);
+      await removeManagedFile(photo.thumbnailUrl);
+    }
   }
 
   async addOne(beerInput: CreateBeerInput): Promise<Beer> {
@@ -47,12 +59,6 @@ export class BeerService {
       beerInput.breweryId,
     );
     if (!breweryExists) throw new NotFoundError("Brasserie non trouvée");
-    const beerNameExists = await this.beerRepository.beerNameExists(
-      beerInput.name,
-    );
-    if (beerNameExists) {
-      throw new ConflictError("Une bière de ce nom existe déjà");
-    }
     return this.beerRepository.addOne(beerInput);
   }
 
@@ -68,16 +74,6 @@ export class BeerService {
         patch.breweryId,
       );
       if (!breweryExists) throw new NotFoundError("Brasserie non trouvée");
-    }
-
-    if (patch.name !== undefined && patch.name !== currentBeer.name) {
-      const nameExists = await this.beerRepository.beerNameExists(
-        patch.name,
-        beerId,
-      );
-      if (nameExists) {
-        throw new ConflictError("Une bière de ce nom existe déjà");
-      }
     }
 
     const mergedFields = {

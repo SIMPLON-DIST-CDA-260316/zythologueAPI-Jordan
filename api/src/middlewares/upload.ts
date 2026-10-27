@@ -61,10 +61,9 @@ const mapMulterError = (
 };
 
 /**
- * Le projet n'a pas d'error handler global : une MulterError non interceptée
- * partirait dans le handler par défaut d'Express et renverrait du HTML avec une
- * stack trace. On appelle donc Multer à la main (pattern documenté dans son
- * README) pour rester au format { message } utilisé par validate.ts.
+ * Multer est appelé à la main (pattern documenté dans son README) pour
+ * traduire chaque MulterError en statut et message choisis par nous : laissée
+ * à errorHandler, elle finirait en 500 générique au lieu d'un 400/413 lisible.
  */
 export const uploadPhoto = (
   req: Request,

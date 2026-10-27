@@ -20,12 +20,6 @@ import {
   type PhotoTarget,
 } from "../config/upload.ts";
 
-export type ImageValidationError =
-  | "NOT_AN_IMAGE"
-  | "UNSUPPORTED_FORMAT"
-  | "IMAGE_TOO_SMALL"
-  | "IMAGE_TOO_LARGE";
-
 export interface GeneratedImage {
   url: string;
   thumbnailUrl: string;
@@ -51,60 +45,31 @@ const sharpOptions = {
  * décoder les octets, ce n'est pas une image, quels que soient son nom et le
  * mimetype annoncé par le client.
  */
-export const validateImage = async (
-  buffer: Buffer,
-): Promise<ImageValidationError | null> => {
+export const validateImage = async (buffer: Buffer): Promise<void> => {
   let metadata: Metadata;
   try {
     metadata = await sharp(buffer, sharpOptions).metadata();
   } catch {
-    return "NOT_AN_IMAGE";
+    throw new BadRequestError("Le fichier envoyé n'est pas une image valide");
   }
 
   const { format, width, height } = metadata;
 
   if (format === undefined || width === undefined || height === undefined) {
-    return "NOT_AN_IMAGE";
+    throw new BadRequestError("Le fichier envoyé n'est pas une image valide");
   }
   if (!ALLOWED_SHARP_FORMATS.includes(format as (typeof ALLOWED_SHARP_FORMATS)[number])) {
-    return "UNSUPPORTED_FORMAT";
+    throw new UnsupportedMediaTypeError(
+      "Format d'image non supporté (JPEG, PNG, WebP ou AVIF attendu)",
+    );
   }
   if (width < MIN_IMAGE_DIMENSION || height < MIN_IMAGE_DIMENSION) {
-    return "IMAGE_TOO_SMALL";
+    throw new BadRequestError("Image trop petite (100 x 100 px minimum)");
   }
   if (width > MAX_IMAGE_DIMENSION || height > MAX_IMAGE_DIMENSION) {
-    return "IMAGE_TOO_LARGE";
+    throw new BadRequestError("Image trop grande (10 000 x 10 000 px maximum)");
   }
-  return null;
 };
-
-/**
- * Traduit le résultat de validateImage en HttpError. Séparée de
- * validateImage pour que celle-ci reste une fonction pure sans connaissance
- * HTTP — c'est ce helper, appelé côté services photo, qui connaît le
- * vocabulaire Express.
- */
-export function throwOnImageValidationError(
-  error: ImageValidationError | null,
-): void {
-  if (error === null) return;
-  switch (error) {
-    case "NOT_AN_IMAGE":
-      throw new BadRequestError(
-        "Le fichier envoyé n'est pas une image valide",
-      );
-    case "UNSUPPORTED_FORMAT":
-      throw new UnsupportedMediaTypeError(
-        "Format d'image non supporté (JPEG, PNG, WebP ou AVIF attendu)",
-      );
-    case "IMAGE_TOO_SMALL":
-      throw new BadRequestError("Image trop petite (100 x 100 px minimum)");
-    case "IMAGE_TOO_LARGE":
-      throw new BadRequestError(
-        "Image trop grande (10 000 x 10 000 px maximum)",
-      );
-  }
-}
 
 /** Assertion défensive : aucune donnée client n'entre dans ces chemins, mais on vérifie. */
 const assertInsideUploads = (filePath: string): void => {

@@ -21,7 +21,7 @@ export class BeerLogRepository {
       `SELECT id, beer_id, beer_name, action, logged_at, logged_by, COUNT(*) OVER() AS total
        FROM beer_log
        WHERE ($1::int IS NULL OR beer_id = $1)
-       ORDER BY logged_at ${direction}
+       ORDER BY logged_at ${direction}, id
        LIMIT $2 OFFSET $3`,
       [filters.beerId ?? null, filters.limit, offset],
     );

@@ -1,4 +1,5 @@
-import type { Pool } from "pg";
+import { DatabaseError, type Pool } from "pg";
+import { ConflictError } from "../errors/httpError.ts";
 import { Ingredient, type IngredientRow } from "../models/ingredient.ts";
 import type { CreateIngredientInput } from "../schemas/ingredientSchema.ts";
 
@@ -46,27 +47,19 @@ export class IngredientRepository {
     return row ? Ingredient.fromRow(row) : null;
   }
 
-  async ingredientNameExists(
-    ingredientName: string,
-    excludeId?: number,
-  ): Promise<boolean> {
-    const ingredient =
-      excludeId !== undefined
-        ? await this.pool.query(
-            `SELECT id FROM ingredient WHERE name = $1 AND id <> $2`,
-            [ingredientName, excludeId],
-          )
-        : await this.pool.query(`SELECT id FROM ingredient WHERE name = $1`, [
-            ingredientName,
-          ]);
-    return ingredient.rows.length > 0;
-  }
-
   async addOne(ingredientInput: CreateIngredientInput): Promise<Ingredient> {
-    const newIngredient = await this.pool.query<{ id: number }>(
-      `INSERT INTO ingredient (name, description) VALUES ($1, $2) RETURNING id`,
-      [ingredientInput.name, ingredientInput.description ?? null],
-    );
+    let newIngredient;
+    try {
+      newIngredient = await this.pool.query<{ id: number }>(
+        `INSERT INTO ingredient (name, description) VALUES ($1, $2) RETURNING id`,
+        [ingredientInput.name, ingredientInput.description ?? null],
+      );
+    } catch (error) {
+      if (error instanceof DatabaseError && error.code === "23505") {
+        throw new ConflictError("Un ingrédient de ce nom existe déjà");
+      }
+      throw error;
+    }
     const addedIngredient = await this.findOneById(newIngredient.rows[0].id);
     if (!addedIngredient) {
       throw new Error("Erreur lors de la création de l'ingrédient");
@@ -78,10 +71,17 @@ export class IngredientRepository {
     ingredientId: number,
     fields: { name: string; description: string | null },
   ): Promise<Ingredient | null> {
-    await this.pool.query(
-      `UPDATE ingredient SET name = $1, description = $2 WHERE id = $3`,
-      [fields.name, fields.description, ingredientId],
-    );
+    try {
+      await this.pool.query(
+        `UPDATE ingredient SET name = $1, description = $2 WHERE id = $3`,
+        [fields.name, fields.description, ingredientId],
+      );
+    } catch (error) {
+      if (error instanceof DatabaseError && error.code === "23505") {
+        throw new ConflictError("Un ingrédient de ce nom existe déjà");
+      }
+      throw error;
+    }
     return this.findOneById(ingredientId);
   }
 

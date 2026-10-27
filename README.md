@@ -47,7 +47,7 @@ Chaque route suit la même chaîne de responsabilité :
    JWT_SECRET=...
    NODE_ENV=development
    ```
-   - `JWT_SECRET` est **obligatoire** : l'API refuse de démarrer sans. Générer une valeur aléatoire avec :
+   - `JWT_SECRET` est **obligatoire** : l'API refuse de démarrer sans, ou s'il fait moins de 32 caractères. Générer une valeur aléatoire avec :
      ```
      node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
      ```

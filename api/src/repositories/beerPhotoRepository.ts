@@ -18,15 +18,6 @@ export class BeerPhotoRepository {
     return result.rows.map(BeerPhoto.fromRow);
   }
 
-  async findOneById(photoId: number): Promise<BeerPhoto | null> {
-    const result = await this.pool.query<BeerPhotoRow>(
-      `SELECT ${PHOTO_COLUMNS} FROM beer_photo WHERE id = $1`,
-      [photoId],
-    );
-    const row = result.rows[0];
-    return row ? BeerPhoto.fromRow(row) : null;
-  }
-
   async countByBeerId(beerId: number): Promise<number> {
     const result = await this.pool.query<{ count: string }>(
       `SELECT COUNT(*) AS count FROM beer_photo WHERE beer_id = $1`,

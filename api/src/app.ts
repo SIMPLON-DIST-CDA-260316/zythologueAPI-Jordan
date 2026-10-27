@@ -11,6 +11,11 @@ import { ensureUploadDirectories } from "./services/imageService.ts";
 const app: Express = express();
 const port = process.env.PORT ?? 3000;
 
+// Fait confiance à X-Forwarded-For posé par le proxy Vite (réseau Docker privé).
+// shortcut: un appel direct au port 3000 depuis l'hôte peut falsifier l'en-tête,
+// à restreindre à l'IP du proxy avant une vraie mise en production
+app.set("trust proxy", "uniquelocal");
+
 app.use(helmet());
 
 app.use(express.json());

@@ -1,4 +1,5 @@
-import type { Pool } from "pg";
+import { DatabaseError, type Pool } from "pg";
+import { ConflictError } from "../errors/httpError.ts";
 import { Brewery, type BreweryRow } from "../models/brewery.ts";
 import type { CreateBreweryInput } from "../schemas/brewerySchema.ts";
 
@@ -61,33 +62,25 @@ export class BreweryRepository {
     return row ? Brewery.fromRow(row) : null;
   }
 
-  async breweryNameExists(
-    breweryName: string,
-    excludeId?: number,
-  ): Promise<boolean> {
-    const brewery =
-      excludeId !== undefined
-        ? await this.pool.query(
-            `SELECT id FROM brewery WHERE name = $1 AND id <> $2`,
-            [breweryName, excludeId],
-          )
-        : await this.pool.query(`SELECT id FROM brewery WHERE name = $1`, [
-            breweryName,
-          ]);
-    return brewery.rows.length > 0;
-  }
-
   async addOne(breweryInput: CreateBreweryInput): Promise<Brewery> {
-    const newBrewery = await this.pool.query<{ id: number }>(
-      `INSERT INTO brewery (name, description, country, city, website) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-      [
-        breweryInput.name,
-        breweryInput.description,
-        breweryInput.country,
-        breweryInput.city,
-        breweryInput.website ?? null,
-      ],
-    );
+    let newBrewery;
+    try {
+      newBrewery = await this.pool.query<{ id: number }>(
+        `INSERT INTO brewery (name, description, country, city, website) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+        [
+          breweryInput.name,
+          breweryInput.description,
+          breweryInput.country,
+          breweryInput.city,
+          breweryInput.website ?? null,
+        ],
+      );
+    } catch (error) {
+      if (error instanceof DatabaseError && error.code === "23505") {
+        throw new ConflictError("Une brasserie de ce nom existe déjà");
+      }
+      throw error;
+    }
     const addedBrewery = await this.findOneById(newBrewery.rows[0].id);
     if (!addedBrewery) {
       throw new Error("Erreur lors de la création de la brasserie");
@@ -105,19 +98,26 @@ export class BreweryRepository {
       website: string | null;
     },
   ): Promise<Brewery | null> {
-    await this.pool.query(
-      `UPDATE brewery
-       SET name = $1, description = $2, country = $3, city = $4, website = $5
-       WHERE id = $6`,
-      [
-        fields.name,
-        fields.description,
-        fields.country,
-        fields.city,
-        fields.website,
-        breweryId,
-      ],
-    );
+    try {
+      await this.pool.query(
+        `UPDATE brewery
+         SET name = $1, description = $2, country = $3, city = $4, website = $5
+         WHERE id = $6`,
+        [
+          fields.name,
+          fields.description,
+          fields.country,
+          fields.city,
+          fields.website,
+          breweryId,
+        ],
+      );
+    } catch (error) {
+      if (error instanceof DatabaseError && error.code === "23505") {
+        throw new ConflictError("Une brasserie de ce nom existe déjà");
+      }
+      throw error;
+    }
     return this.findOneById(breweryId);
   }
 

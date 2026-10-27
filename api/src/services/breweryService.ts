@@ -1,4 +1,4 @@
-import { ConflictError, NotFoundError } from "../errors/httpError.ts";
+import { NotFoundError } from "../errors/httpError.ts";
 import type { Brewery } from "../models/brewery.ts";
 import type { BreweryRepository } from "../repositories/breweryRepository.ts";
 import type {
@@ -62,12 +62,6 @@ export class BreweryService {
   }
 
   async addOne(breweryInput: CreateBreweryInput): Promise<Brewery> {
-    const breweryNameExists = await this.breweryRepository.breweryNameExists(
-      breweryInput.name,
-    );
-    if (breweryNameExists) {
-      throw new ConflictError("Une brasserie de ce nom existe déjà");
-    }
     return this.breweryRepository.addOne(breweryInput);
   }
 
@@ -77,16 +71,6 @@ export class BreweryService {
   ): Promise<Brewery> {
     const currentBrewery = await this.breweryRepository.findOneById(breweryId);
     if (!currentBrewery) throw new NotFoundError("Brasserie non trouvée");
-
-    if (patch.name !== undefined && patch.name !== currentBrewery.name) {
-      const nameExists = await this.breweryRepository.breweryNameExists(
-        patch.name,
-        breweryId,
-      );
-      if (nameExists) {
-        throw new ConflictError("Une brasserie de ce nom existe déjà");
-      }
-    }
 
     const mergedFields = {
       name: patch.name ?? currentBrewery.name,

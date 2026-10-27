@@ -1,4 +1,4 @@
-import { ConflictError, NotFoundError } from "../errors/httpError.ts";
+import { NotFoundError } from "../errors/httpError.ts";
 import type { Category } from "../models/category.ts";
 import type { BeerCategoryRepository } from "../repositories/beerCategoryRepository.ts";
 import type { CategoryRepository } from "../repositories/categoryRepository.ts";
@@ -25,12 +25,6 @@ export class BeerCategoryService {
 
     const category = await this.categoryRepository.findOneById(categoryId);
     if (!category) throw new NotFoundError("Catégorie non trouvée");
-
-    const alreadyAssociated =
-      await this.beerCategoryRepository.associationExists(beerId, categoryId);
-    if (alreadyAssociated) {
-      throw new ConflictError("Cette catégorie est déjà associée à cette bière");
-    }
 
     await this.beerCategoryRepository.addOne(beerId, categoryId);
     return category;

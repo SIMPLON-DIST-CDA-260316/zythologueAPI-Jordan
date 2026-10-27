@@ -1,4 +1,4 @@
-import { ConflictError, NotFoundError } from "../errors/httpError.ts";
+import { NotFoundError } from "../errors/httpError.ts";
 import type { Category } from "../models/category.ts";
 import type { CategoryRepository } from "../repositories/categoryRepository.ts";
 import type {
@@ -49,12 +49,6 @@ export class CategoryService {
   }
 
   async addOne(categoryInput: CreateCategoryInput): Promise<Category> {
-    const categoryNameExists = await this.categoryRepository.categoryNameExists(
-      categoryInput.name,
-    );
-    if (categoryNameExists) {
-      throw new ConflictError("Une catégorie de ce nom existe déjà");
-    }
     return this.categoryRepository.addOne(categoryInput);
   }
 
@@ -65,16 +59,6 @@ export class CategoryService {
     const currentCategory =
       await this.categoryRepository.findOneById(categoryId);
     if (!currentCategory) throw new NotFoundError("Catégorie non trouvée");
-
-    if (patch.name !== undefined && patch.name !== currentCategory.name) {
-      const nameExists = await this.categoryRepository.categoryNameExists(
-        patch.name,
-        categoryId,
-      );
-      if (nameExists) {
-        throw new ConflictError("Une catégorie de ce nom existe déjà");
-      }
-    }
 
     const mergedFields = {
       name: patch.name ?? currentCategory.name,

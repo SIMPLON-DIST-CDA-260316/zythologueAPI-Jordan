@@ -1,4 +1,5 @@
-import type { Pool } from "pg";
+import { DatabaseError, type Pool } from "pg";
+import { ConflictError } from "../errors/httpError.ts";
 import { Beer, type BeerRow } from "../models/beer.ts";
 import type { CreateBeerInput } from "../schemas/beerSchema.ts";
 
@@ -46,7 +47,7 @@ export class BeerRepository {
          AND ($5::int IS NULL OR be.id IN (SELECT beer_id FROM beer_category WHERE category_id = $5))
          AND ($6::int IS NULL OR be.id IN (SELECT beer_id FROM beer_ingredient WHERE ingredient_id = $6))
          AND ($7::text IS NULL OR be.name ILIKE '%' || $7 || '%' ESCAPE '\\')
-       ORDER BY ${sortColumn} ${direction}
+       ORDER BY ${sortColumn} ${direction}, be.id
        LIMIT $3 OFFSET $4`,
       [
         filters.breweryId ?? null,
@@ -105,30 +106,26 @@ export class BeerRepository {
     return brewery.rows.length > 0;
   }
 
-  async beerNameExists(beerName: string, excludeId?: number): Promise<boolean> {
-    const beer = excludeId !== undefined
-      ? await this.pool.query(
-          `SELECT id FROM beer WHERE name = $1 AND id <> $2`,
-          [beerName, excludeId],
-        )
-      : await this.pool.query(`SELECT id FROM beer WHERE name = $1`, [
-          beerName,
-        ]);
-    return beer.rows.length > 0;
-  }
-
   async addOne(beerInput: CreateBeerInput): Promise<Beer> {
-    const newBeer = await this.pool.query<{ id: number }>(
-      `INSERT INTO beer (name, description, price, alcohol_level, is_alcohol_free, brewery_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-      [
-        beerInput.name,
-        beerInput.description,
-        beerInput.price,
-        beerInput.alcoholLevel,
-        beerInput.isAlcoholFree,
-        beerInput.breweryId,
-      ],
-    );
+    let newBeer;
+    try {
+      newBeer = await this.pool.query<{ id: number }>(
+        `INSERT INTO beer (name, description, price, alcohol_level, is_alcohol_free, brewery_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+        [
+          beerInput.name,
+          beerInput.description,
+          beerInput.price,
+          beerInput.alcoholLevel,
+          beerInput.isAlcoholFree,
+          beerInput.breweryId,
+        ],
+      );
+    } catch (error) {
+      if (error instanceof DatabaseError && error.code === "23505") {
+        throw new ConflictError("Une bière de ce nom existe déjà");
+      }
+      throw error;
+    }
     const addedBeer = await this.findOneById(newBeer.rows[0].id);
     if (!addedBeer) {
       throw new Error("Erreur lors de la création de la bière");
@@ -147,20 +144,46 @@ export class BeerRepository {
       breweryId: number;
     },
   ): Promise<Beer | null> {
-    await this.pool.query(
-      `UPDATE beer
-       SET name = $1, description = $2, price = $3, alcohol_level = $4, is_alcohol_free = $5, brewery_id = $6
-       WHERE id = $7`,
-      [
-        fields.name,
-        fields.description,
-        fields.price,
-        fields.alcoholLevel,
-        fields.isAlcoholFree,
-        fields.breweryId,
-        beerId,
-      ],
-    );
+    try {
+      await this.pool.query(
+        `UPDATE beer
+         SET name = $1, description = $2, price = $3, alcohol_level = $4, is_alcohol_free = $5, brewery_id = $6
+         WHERE id = $7`,
+        [
+          fields.name,
+          fields.description,
+          fields.price,
+          fields.alcoholLevel,
+          fields.isAlcoholFree,
+          fields.breweryId,
+          beerId,
+        ],
+      );
+    } catch (error) {
+      if (error instanceof DatabaseError && error.code === "23505") {
+        throw new ConflictError("Une bière de ce nom existe déjà");
+      }
+      throw error;
+    }
     return this.findOneById(beerId);
+  }
+
+  /**
+   * beer_photo part en cascade avec la bière : les URLs doivent être lues
+   * AVANT le DELETE, sinon les fichiers restent orphelins sur le disque.
+   */
+  async findPhotoUrlsByBeerId(
+    beerId: number,
+  ): Promise<{ url: string; thumbnailUrl: string | null }[]> {
+    const result = await this.pool.query<{
+      url: string;
+      thumbnail_url: string | null;
+    }>(`SELECT url, thumbnail_url FROM beer_photo WHERE beer_id = $1`, [
+      beerId,
+    ]);
+    return result.rows.map((row) => ({
+      url: row.url,
+      thumbnailUrl: row.thumbnail_url,
+    }));
   }
 }

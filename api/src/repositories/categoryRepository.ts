@@ -1,4 +1,5 @@
-import type { Pool } from "pg";
+import { DatabaseError, type Pool } from "pg";
+import { ConflictError } from "../errors/httpError.ts";
 import { Category, type CategoryRow } from "../models/category.ts";
 import type { CreateCategoryInput } from "../schemas/categorySchema.ts";
 
@@ -46,27 +47,19 @@ export class CategoryRepository {
     return row ? Category.fromRow(row) : null;
   }
 
-  async categoryNameExists(
-    categoryName: string,
-    excludeId?: number,
-  ): Promise<boolean> {
-    const category =
-      excludeId !== undefined
-        ? await this.pool.query(
-            `SELECT id FROM category WHERE name = $1 AND id <> $2`,
-            [categoryName, excludeId],
-          )
-        : await this.pool.query(`SELECT id FROM category WHERE name = $1`, [
-            categoryName,
-          ]);
-    return category.rows.length > 0;
-  }
-
   async addOne(categoryInput: CreateCategoryInput): Promise<Category> {
-    const newCategory = await this.pool.query<{ id: number }>(
-      `INSERT INTO category (name, description) VALUES ($1, $2) RETURNING id`,
-      [categoryInput.name, categoryInput.description],
-    );
+    let newCategory;
+    try {
+      newCategory = await this.pool.query<{ id: number }>(
+        `INSERT INTO category (name, description) VALUES ($1, $2) RETURNING id`,
+        [categoryInput.name, categoryInput.description],
+      );
+    } catch (error) {
+      if (error instanceof DatabaseError && error.code === "23505") {
+        throw new ConflictError("Une catégorie de ce nom existe déjà");
+      }
+      throw error;
+    }
     const addedCategory = await this.findOneById(newCategory.rows[0].id);
     if (!addedCategory) {
       throw new Error("Erreur lors de la création de la catégorie");
@@ -78,10 +71,17 @@ export class CategoryRepository {
     categoryId: number,
     fields: { name: string; description: string },
   ): Promise<Category | null> {
-    await this.pool.query(
-      `UPDATE category SET name = $1, description = $2 WHERE id = $3`,
-      [fields.name, fields.description, categoryId],
-    );
+    try {
+      await this.pool.query(
+        `UPDATE category SET name = $1, description = $2 WHERE id = $3`,
+        [fields.name, fields.description, categoryId],
+      );
+    } catch (error) {
+      if (error instanceof DatabaseError && error.code === "23505") {
+        throw new ConflictError("Une catégorie de ce nom existe déjà");
+      }
+      throw error;
+    }
     return this.findOneById(categoryId);
   }
 

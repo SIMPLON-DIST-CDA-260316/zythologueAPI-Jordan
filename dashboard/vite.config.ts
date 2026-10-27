@@ -10,6 +10,8 @@ export default defineConfig({
     alias: { "@": path.resolve(import.meta.dirname, "./src") },
   },
   server: {
-    proxy: { "/api": "http://api:3000" },
+    // xfwd : transmet l'IP du navigateur, sinon le rate limit du login voit
+    // toutes les requêtes venir du conteneur dashboard
+    proxy: { "/api": { target: "http://api:3000", xfwd: true } },
   },
 });
