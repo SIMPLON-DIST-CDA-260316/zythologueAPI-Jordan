@@ -1,4 +1,5 @@
 import { breweryQueries } from "@/entities/brewery";
+import { useAuth } from "@/entities/session";
 import { Button } from "@/shared/ui/button";
 import { SearchInput } from "@/shared/ui/search-input";
 import {
@@ -32,7 +33,11 @@ export function BeersToolbar({
   setParams,
   clearParams,
 }: BeersToolbarProps) {
-  const { data: breweries = [] } = useQuery(breweryQueries.options());
+  const { isAdmin } = useAuth();
+  const { data: breweries = [] } = useQuery({
+    ...breweryQueries.options(),
+    enabled: isAdmin,
+  });
   const breweryItems = [
     { value: ALL, label: "Toutes les brasseries" },
     ...breweries.map((b) => ({ value: String(b.id), label: b.name })),

@@ -23,8 +23,8 @@ export function RequireAuth() {
 
 // À placer sous RequireAuth : user est forcément défini ici
 export function RequireAdmin() {
-  const { user } = useAuth();
-  if (user?.role !== "admin") return <Navigate to="/acces-refuse" replace />;
+  const { isAdmin } = useAuth();
+  if (!isAdmin) return <Navigate to="/acces-refuse" replace />;
   return <Outlet />;
 }
 

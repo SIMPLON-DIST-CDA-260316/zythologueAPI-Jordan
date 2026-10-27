@@ -1,4 +1,5 @@
 import { beerQueries, type Beer } from "@/entities/beer";
+import { useAuth } from "@/entities/session";
 import { BeerFormSheet } from "@/features/beer-form";
 import { DeleteBeerDialog } from "@/features/delete-beer";
 import { useClampPage } from "@/shared/lib/hooks/use-list-search-params";
@@ -34,9 +35,13 @@ export function BeersPage() {
     [],
   );
 
-  const { data, isPending, isError, error, isPlaceholderData } = useQuery(
-    beerQueries.list({ ...params, limit: PAGE_SIZE }),
-  );
+  // Pas de fetch sans droits, même si la page était montée hors de
+  // RequireAdmin (défense en profondeur : la vraie barrière reste l'API)
+  const { isAdmin } = useAuth();
+  const { data, isPending, isError, error, isPlaceholderData } = useQuery({
+    ...beerQueries.list({ ...params, limit: PAGE_SIZE }),
+    enabled: isAdmin,
+  });
 
   useClampPage(params.page, data?.totalPages, isPlaceholderData, (page) =>
     setParams({ page }),

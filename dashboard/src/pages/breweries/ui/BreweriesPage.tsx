@@ -3,6 +3,7 @@ import {
   type Brewery,
   type BreweryListParams,
 } from "@/entities/brewery";
+import { useAuth } from "@/entities/session";
 import { BreweryFormSheet } from "@/features/brewery-form";
 import { DeleteBreweryDialog } from "@/features/delete-brewery";
 import {
@@ -46,9 +47,13 @@ export function BreweriesPage() {
     [],
   );
 
-  const { data, isPending, isError, error, isPlaceholderData } = useQuery(
-    breweryQueries.list({ ...params, limit: PAGE_SIZE }),
-  );
+  // Pas de fetch sans droits, même si la page était montée hors de
+  // RequireAdmin (défense en profondeur : la vraie barrière reste l'API)
+  const { isAdmin } = useAuth();
+  const { data, isPending, isError, error, isPlaceholderData } = useQuery({
+    ...breweryQueries.list({ ...params, limit: PAGE_SIZE }),
+    enabled: isAdmin,
+  });
 
   useClampPage(params.page, data?.totalPages, isPlaceholderData, (page) =>
     setParams({ page }),

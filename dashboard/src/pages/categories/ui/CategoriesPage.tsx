@@ -3,6 +3,7 @@ import {
   type Category,
   type CategoryListParams,
 } from "@/entities/category";
+import { useAuth } from "@/entities/session";
 import { CategoryFormSheet } from "@/features/category-form";
 import { DeleteCategoryDialog } from "@/features/delete-category";
 import {
@@ -46,9 +47,13 @@ export function CategoriesPage() {
     [],
   );
 
-  const { data, isPending, isError, error, isPlaceholderData } = useQuery(
-    categoryQueries.list({ ...params, limit: PAGE_SIZE }),
-  );
+  // Pas de fetch sans droits, même si la page était montée hors de
+  // RequireAdmin (défense en profondeur : la vraie barrière reste l'API)
+  const { isAdmin } = useAuth();
+  const { data, isPending, isError, error, isPlaceholderData } = useQuery({
+    ...categoryQueries.list({ ...params, limit: PAGE_SIZE }),
+    enabled: isAdmin,
+  });
 
   useClampPage(params.page, data?.totalPages, isPlaceholderData, (page) =>
     setParams({ page }),

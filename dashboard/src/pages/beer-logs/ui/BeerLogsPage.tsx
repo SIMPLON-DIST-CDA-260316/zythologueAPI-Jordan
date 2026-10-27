@@ -1,4 +1,5 @@
 import { beerLogQueries, type BeerLog } from "@/entities/beer-log";
+import { useAuth } from "@/entities/session";
 import {
   useClampPage,
   useListSearchParams,
@@ -44,9 +45,13 @@ const columns = columnHelper.columns([
 // liste donc que les ajouts des bières encore au catalogue
 export function BeerLogsPage() {
   const { params, setParams } = useListSearchParams(searchParamsSchema);
-  const { data, isPending, isError, error, isPlaceholderData } = useQuery(
-    beerLogQueries.list({ ...params, limit: PAGE_SIZE }),
-  );
+  // Pas de fetch sans droits, même si la page était montée hors de
+  // RequireAdmin (défense en profondeur : la vraie barrière reste l'API)
+  const { isAdmin } = useAuth();
+  const { data, isPending, isError, error, isPlaceholderData } = useQuery({
+    ...beerLogQueries.list({ ...params, limit: PAGE_SIZE }),
+    enabled: isAdmin,
+  });
 
   useClampPage(params.page, data?.totalPages, isPlaceholderData, (page) =>
     setParams({ page }),

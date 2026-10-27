@@ -4,6 +4,8 @@ import type { User } from "./types";
 type AuthContextValue = {
   user: User | null;
   isLoading: boolean;
+  // Seule définition de « admin » côté front : guards et pages la partagent
+  isAdmin: boolean;
   logout: () => void;
 };
 

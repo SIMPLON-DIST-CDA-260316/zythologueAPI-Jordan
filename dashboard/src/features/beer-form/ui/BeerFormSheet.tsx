@@ -5,6 +5,7 @@ import {
   type Beer,
 } from "@/entities/beer";
 import { breweryQueries } from "@/entities/brewery";
+import { useAuth } from "@/entities/session";
 import { useFormValidation } from "@/shared/lib/hooks/use-form-validation";
 import { Button } from "@/shared/ui/button";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/shared/ui/field";
@@ -72,7 +73,11 @@ function BeerForm({
   onSuccess: () => void;
 }) {
   const queryClient = useQueryClient();
-  const { data: breweries = [] } = useQuery(breweryQueries.options());
+  const { isAdmin } = useAuth();
+  const { data: breweries = [] } = useQuery({
+    ...breweryQueries.options(),
+    enabled: isAdmin,
+  });
   const breweryItems = breweries.map((b) => ({
     value: String(b.id),
     label: b.name,

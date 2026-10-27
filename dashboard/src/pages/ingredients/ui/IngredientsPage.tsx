@@ -3,6 +3,7 @@ import {
   type Ingredient,
   type IngredientListParams,
 } from "@/entities/ingredient";
+import { useAuth } from "@/entities/session";
 import { IngredientFormSheet } from "@/features/ingredient-form";
 import { DeleteIngredientDialog } from "@/features/delete-ingredient";
 import {
@@ -46,9 +47,13 @@ export function IngredientsPage() {
     [],
   );
 
-  const { data, isPending, isError, error, isPlaceholderData } = useQuery(
-    ingredientQueries.list({ ...params, limit: PAGE_SIZE }),
-  );
+  // Pas de fetch sans droits, même si la page était montée hors de
+  // RequireAdmin (défense en profondeur : la vraie barrière reste l'API)
+  const { isAdmin } = useAuth();
+  const { data, isPending, isError, error, isPlaceholderData } = useQuery({
+    ...ingredientQueries.list({ ...params, limit: PAGE_SIZE }),
+    enabled: isAdmin,
+  });
 
   useClampPage(params.page, data?.totalPages, isPlaceholderData, (page) =>
     setParams({ page }),
