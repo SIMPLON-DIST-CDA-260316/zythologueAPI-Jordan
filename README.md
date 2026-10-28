@@ -501,6 +501,14 @@ Les descriptions des bières et des brasseries sont saisies dans le dashboard av
 
 Les anciennes descriptions en texte brut restent valides : du texte sans balise est du HTML correct.
 
+Côté dashboard, le composant `RichText` repasse chaque description dans [DOMPurify](https://github.com/cure53/DOMPurify) avec la même liste blanche avant de l'afficher. En production (`vite preview`), une **Content-Security-Policy** ([`dashboard/vite.config.ts`](dashboard/vite.config.ts)) interdit en plus tout script inline ou venant d'un autre domaine : même un HTML qui passerait les deux nettoyages ne pourrait rien exécuter. Elle n'est pas active en dev, où Vite injecte lui-même un script inline. Pour la tester :
+
+```bash
+docker compose run --rm -p 4173:4173 dashboard sh -c "npm run build && npm run preview -- --host"
+```
+
+puis <http://localhost:4173> : la réponse porte l'en-tête `Content-Security-Policy`, et la console du navigateur ne doit afficher aucune violation.
+
 ---
 
 ## Authentification
