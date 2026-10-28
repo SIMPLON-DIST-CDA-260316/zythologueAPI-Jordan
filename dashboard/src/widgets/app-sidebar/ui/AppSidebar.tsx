@@ -55,7 +55,11 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
               {navItems.map((item) => (
                 <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton
-                    isActive={pathname === item.url}
+                    // Actif aussi sur le détail (/bieres/3), sauf "/" qui préfixe tout
+                    isActive={
+                      pathname === item.url ||
+                      (item.url !== "/" && pathname.startsWith(`${item.url}/`))
+                    }
                     tooltip={item.title}
                     render={<Link to={item.url} />}
                   >

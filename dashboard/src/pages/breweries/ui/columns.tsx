@@ -2,6 +2,7 @@ import type { Brewery } from "@/entities/brewery";
 import type { DataTableFeatures } from "@/shared/ui/data-table";
 import { RowActions } from "@/shared/ui/row-actions";
 import { createColumnHelper } from "@tanstack/react-table";
+import { Link } from "react-router";
 
 const columnHelper = createColumnHelper<DataTableFeatures, Brewery>();
 
@@ -15,7 +16,14 @@ export const getBreweryColumns = ({ onEdit, onDelete }: BreweryColumnActions) =>
   columnHelper.columns([
     columnHelper.accessor("name", {
       header: "Nom",
-      cell: (info) => <span className="font-medium">{info.getValue()}</span>,
+      cell: ({ row, getValue }) => (
+        <Link
+          to={`/brasseries/${row.original.id}`}
+          className="font-medium underline-offset-4 hover:underline"
+        >
+          {getValue()}
+        </Link>
+      ),
     }),
     columnHelper.accessor("city", { header: "Ville", enableSorting: false }),
     columnHelper.accessor("country", { header: "Pays", enableSorting: false }),

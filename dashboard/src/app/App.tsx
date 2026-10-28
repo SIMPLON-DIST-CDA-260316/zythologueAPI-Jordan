@@ -1,7 +1,9 @@
 import { AuthProvider, ME_QUERY_KEY } from "@/entities/session";
+import { BeerDetailPage } from "@/pages/beer-detail";
 import { BeerLogsPage } from "@/pages/beer-logs";
 import { BeersPage } from "@/pages/beers";
 import { BreweriesPage } from "@/pages/breweries";
+import { BreweryDetailPage } from "@/pages/brewery-detail";
 import { CategoriesPage } from "@/pages/categories";
 import { DashboardPage } from "@/pages/dashboard";
 import { ForbiddenPage } from "@/pages/forbidden";
@@ -33,6 +35,14 @@ function handleUnauthorized(error: ApiError) {
 const queryClient = new QueryClient({
   queryCache: new QueryCache({ onError: handleUnauthorized }),
   mutationCache: new MutationCache({ onError: handleUnauthorized }),
+  defaultOptions: {
+    queries: {
+      // Un 4xx (404 d'une page détail, id invalide, 401) ne changera pas en
+      // réessayant : seuls serveur injoignable (0) et 5xx valent 3 essais
+      retry: (failureCount, error) =>
+        (error.status === 0 || error.status >= 500) && failureCount < 3,
+    },
+  },
 });
 
 export function App() {
@@ -46,7 +56,12 @@ export function App() {
                 <Route element={<AdminLayout />}>
                   <Route path="/" element={<DashboardPage />} />
                   <Route path="/bieres" element={<BeersPage />} />
+                  <Route path="/bieres/:id" element={<BeerDetailPage />} />
                   <Route path="/brasseries" element={<BreweriesPage />} />
+                  <Route
+                    path="/brasseries/:id"
+                    element={<BreweryDetailPage />}
+                  />
                   <Route path="/categories" element={<CategoriesPage />} />
                   <Route path="/ingredients" element={<IngredientsPage />} />
                   <Route path="/journal" element={<BeerLogsPage />} />

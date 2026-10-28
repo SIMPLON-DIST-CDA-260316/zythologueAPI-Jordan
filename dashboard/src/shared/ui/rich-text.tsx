@@ -26,11 +26,13 @@ type RichTextProps = {
 // Affiche une description saisie avec l'éditeur. Seul dangerouslySetInnerHTML
 // de l'application : tout HTML venant de l'API doit passer par ce composant.
 // Le preflight de Tailwind retire puces et marges : on les remet ici.
+// a[href] seulement : un lien refusé par l'API (javascript:…) n'a plus de href
+// et doit s'afficher comme du texte.
 export function RichText({ html, className }: RichTextProps) {
   return (
     <div
       className={cn(
-        "text-sm leading-relaxed [&_:is(ul,ol)]:pl-5 [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-4 [&_ol]:list-decimal [&_ul]:list-disc [&>*+*]:mt-2",
+        "text-sm leading-relaxed [&_:is(ul,ol)]:pl-5 [&_a[href]]:text-primary [&_a[href]]:underline [&_a[href]]:underline-offset-4 [&_ol]:list-decimal [&_ul]:list-disc [&>*+*]:mt-2",
         className,
       )}
       dangerouslySetInnerHTML={{
