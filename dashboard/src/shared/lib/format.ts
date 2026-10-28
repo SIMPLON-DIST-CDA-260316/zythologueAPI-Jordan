@@ -9,3 +9,5 @@ export const formatPrice = (price: number) => euro.format(price);
 
 export const formatAlcoholLevel = (alcoholLevel: number) =>
   `${decimal.format(alcoholLevel)} %`;
+
+export const formatGrade = (grade: number) => `${decimal.format(grade)} / 10`;

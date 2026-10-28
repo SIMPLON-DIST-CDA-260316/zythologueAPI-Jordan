@@ -91,7 +91,7 @@ Front d'administration en **React + Vite**, construit sur les blocs [shadcn/ui](
 | Route | Accès | Contenu |
 |---|---|---|
 | `/login`, `/register` | non connecté | Connexion, création de compte |
-| `/` | admin | Tableau de bord |
+| `/` | admin | Tableau de bord : indicateurs clés, bières par catégorie et par degré, top 5 des notes |
 | `/bieres` | admin | Liste paginée des bières : recherche par nom, filtres (brasserie, alcool), tri (prix, degré), création, modification, suppression |
 
 **Choix techniques**
@@ -100,6 +100,7 @@ Front d'administration en **React + Vite**, construit sur les blocs [shadcn/ui](
 - **Appels API** : un seul point d'entrée, `apiFetch` (`shared/api`), qui lève des `ApiError` typées. Les requêtes passent par **TanStack Query** (`queryOptions` par entité, invalidation après chaque création, modification ou suppression).
 - **Validation** : les schémas Zod sont partagés avec l'API via `@zythologue/shared`. Le formulaire valide avant l'envoi pour l'UX, l'API revalide tout.
 - **Liste des bières** : DataTable shadcn sur TanStack Table v9. Pagination, recherche, filtres et tri sont faits **côté API** ; leur état vit dans l'URL (`?search=ipa&sortBy=price&page=2`), donc il résiste au rechargement et se partage.
+- **Graphiques** : [charts shadcn](https://ui.shadcn.com/charts) (recharts). Les chiffres sont agrégés en SQL par `GET /stats`, le dashboard ne fait qu'afficher. Les barres utilisent `--chart-2`, dont le contraste avec les cartes dépasse 3:1 dans les deux thèmes (WCAG 1.4.11).
 - **Organisation** : [Feature-Sliced Design](https://feature-sliced.design) (`app`, `pages`, `widgets`, `features`, `entities`, `shared`).
 
 ## Ressource `Beer`
@@ -633,7 +634,7 @@ Défini dans [`api/src/middlewares/auth.ts`](api/src/middlewares/auth.ts), il en
 | **Connecté** | `GET /auth/me`, `POST /beers/:id/reviews` | 401 |
 | **Auteur** | `PATCH /beers/:id/reviews/:reviewId` (même un admin ne modifie pas l'avis d'un autre) | 401, 403 |
 | **Auteur ou admin** | `DELETE /beers/:id/reviews/:reviewId` (modération) | 401, 403 |
-| **Admin** | tous les `POST` / `PATCH` / `DELETE` du catalogue (bières, brasseries, catégories, ingrédients, photos, liaisons `beer_category` / `beer_ingredient`), `GET /beer-logs` | 401, 403 |
+| **Admin** | tous les `POST` / `PATCH` / `DELETE` du catalogue (bières, brasseries, catégories, ingrédients, photos, liaisons `beer_category` / `beer_ingredient`), `GET /beer-logs`, `GET /stats` | 401, 403 |
 
 Toutes les routes protégées peuvent donc répondre, en plus des codes documentés pour chaque endpoint :
 
@@ -727,6 +728,9 @@ Le détail complet (body, query params, réponses, exemples) de chaque endpoint 
 
 **`beer_log`** — journal d'audit en lecture seule, alimenté par un trigger PostgreSQL sur chaque insertion de bière, **réservé aux admins**
 - `GET /api/v1/beer-logs`
+
+**Statistiques** — agrégats calculés en SQL pour l'accueil du dashboard (totaux, bières par catégorie, répartition par degré, top 5 des notes), **réservé aux admins**
+- `GET /api/v1/stats`
 
 ---
 

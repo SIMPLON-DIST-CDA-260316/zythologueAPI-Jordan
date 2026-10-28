@@ -1,0 +1,21 @@
+meta {
+  name: Get stats
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/stats
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body.totals.beers: isNumber
+  res.body.beersByAlcoholLevel: length 5
+}
+
+docs {
+  Réservé aux admins : lancer d'abord auth/Login admin.
+}

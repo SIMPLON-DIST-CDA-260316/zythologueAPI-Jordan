@@ -2190,6 +2190,95 @@ export const openapiSpec = {
         },
       },
     },
+    "/stats": {
+      get: {
+        security: cookieAuthSecurity,
+        summary:
+          "Indicateurs de l'accueil du dashboard (agrégats calculés en SQL)",
+        description:
+          "Totaux, bières par catégorie (catégories sans bière comprises), répartition par degré d'alcool (5 tranches fixes, toujours renvoyées dans l'ordre) et top 5 des bières les mieux notées.",
+        responses: {
+          "401": unauthorizedResponse,
+          "403": adminForbiddenResponse,
+          "200": {
+            description: "Succès",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    totals: {
+                      type: "object",
+                      properties: {
+                        beers: { type: "integer" },
+                        breweries: { type: "integer" },
+                        reviews: { type: "integer" },
+                        averageGrade: {
+                          type: "number",
+                          nullable: true,
+                          description:
+                            "Note moyenne sur 10, null sans aucun avis",
+                        },
+                      },
+                    },
+                    beersByCategory: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          name: { type: "string" },
+                          count: { type: "integer" },
+                        },
+                      },
+                    },
+                    beersByAlcoholLevel: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          range: { type: "string" },
+                          count: { type: "integer" },
+                        },
+                      },
+                    },
+                    topRatedBeers: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          id: { type: "integer" },
+                          name: { type: "string" },
+                          averageGrade: { type: "number" },
+                          reviewCount: { type: "integer" },
+                        },
+                      },
+                    },
+                  },
+                },
+                example: {
+                  totals: {
+                    beers: 29,
+                    breweries: 12,
+                    reviews: 24,
+                    averageGrade: 7.5,
+                  },
+                  beersByCategory: [{ name: "Blonde", count: 13 }],
+                  beersByAlcoholLevel: [{ range: "5–7 %", count: 13 }],
+                  topRatedBeers: [
+                    {
+                      id: 14,
+                      name: "Orval Trappiste",
+                      averageGrade: 9,
+                      reviewCount: 1,
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      },
+    },
     "/auth/register": {
       post: {
         summary: "Crée un compte utilisateur",
