@@ -495,7 +495,7 @@ Supprime une brasserie par son identifiant.
 Les descriptions des bières et des brasseries sont saisies dans le dashboard avec un éditeur de texte riche (Quill) : elles contiennent du HTML. Un client qui l'affiche l'injecte tel quel dans sa page, donc un `<script>` enregistré en base serait une XSS stockée. L'éditeur ne protège de rien (n'importe qui peut appeler l'API avec Bruno ou curl) : **l'API nettoie elle-même** chaque description reçue, avec [`sanitize-html`](https://github.com/apostrophecms/sanitize-html) ([`api/src/schemas/richText.ts`](api/src/schemas/richText.ts)).
 
 - Balises conservées : `p`, `br`, `strong`, `em`, `u`, `ol`, `ul`, `li`, `a`. Tout le reste est supprimé (`script`, `style`, `img`, `iframe`…), contenu de `script`/`style` compris.
-- Attributs : seul `href` sur `a`, en `http`/`https` uniquement (un lien `javascript:` perd son `href`). `rel="noopener noreferrer nofollow"` et `target="_blank"` sont imposés. Aucun `style` ni `on*`.
+- Attributs : seul `href` sur `a`, en URL absolue `http`/`https` uniquement (un lien `javascript:`, `mailto:` ou relatif perd son `href`). `rel="noopener noreferrer nofollow"` et `target="_blank"` sont imposés. Aucun `style` ni `on*`.
 - 10 000 caractères max (avant nettoyage).
 - Sans texte visible une fois nettoyée (`<p><br></p>` d'un éditeur vide, ou un simple `<script>`) : la description d'une bière devient `null`, celle d'une brasserie (obligatoire) renvoie 400.
 

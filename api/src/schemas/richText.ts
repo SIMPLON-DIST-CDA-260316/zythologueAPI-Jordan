@@ -10,10 +10,17 @@ const RICH_TEXT_OPTIONS: sanitizeHtml.IOptions = {
   allowedSchemes: ["http", "https"],
   allowProtocolRelative: false,
   transformTags: {
-    // Écrase les rel/target envoyés : le lien s'ouvre sans accès à window.opener
-    a: sanitizeHtml.simpleTransform("a", {
-      rel: "noopener noreferrer nofollow",
-      target: "_blank",
+    a: (tagName, { href, ...attribs }) => ({
+      tagName,
+      attribs: {
+        ...attribs,
+        // allowedSchemes laisse passer les liens relatifs (www.site.fr, /admin) :
+        // on n'accepte qu'une URL absolue, comme DOMPurify côté dashboard
+        ...(href && /^https?:\/\//i.test(href.trim()) ? { href } : {}),
+        // Écrase les rel/target envoyés : le lien s'ouvre sans accès à window.opener
+        rel: "noopener noreferrer nofollow",
+        target: "_blank",
+      },
     }),
   },
 };
