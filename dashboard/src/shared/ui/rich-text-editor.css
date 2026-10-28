@@ -1,0 +1,88 @@
+/* Thème snow de Quill aux couleurs du dashboard (clair et sombre).
+   quill.snow.css n'est pas dans un @layer : il l'emporte sur les utilitaires
+   Tailwind, d'où ces sélecteurs préfixés, plus spécifiques que les siens. */
+
+.rich-text-editor .ql-toolbar.ql-snow,
+.rich-text-editor .ql-container.ql-snow {
+  border-color: var(--input);
+  font-family: inherit;
+}
+
+.rich-text-editor .ql-toolbar.ql-snow {
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.rich-text-editor .ql-container.ql-snow {
+  border-radius: 0 0 var(--radius) var(--radius);
+  font-size: 0.875rem; /* text-sm */
+}
+
+.rich-text-editor .ql-editor {
+  min-height: 8rem;
+}
+
+.rich-text-editor:focus-within .ql-container.ql-snow {
+  border-color: var(--ring);
+}
+
+.rich-text-editor:has([aria-invalid="true"])
+  :is(.ql-toolbar, .ql-container).ql-snow {
+  border-color: var(--destructive);
+}
+
+.rich-text-editor .ql-editor.ql-blank::before {
+  color: var(--muted-foreground);
+  font-style: normal;
+}
+
+/* Icônes : #444 par défaut, invisibles en mode sombre */
+.rich-text-editor .ql-snow :is(.ql-stroke, .ql-stroke-miter) {
+  stroke: var(--foreground);
+}
+.rich-text-editor .ql-snow :is(.ql-fill, .ql-stroke.ql-fill) {
+  fill: var(--foreground);
+}
+.rich-text-editor
+  .ql-snow.ql-toolbar
+  button:is(:hover, :focus, .ql-active)
+  :is(.ql-stroke, .ql-stroke-miter) {
+  stroke: var(--primary);
+}
+.rich-text-editor
+  .ql-snow.ql-toolbar
+  button:is(:hover, :focus, .ql-active)
+  :is(.ql-fill, .ql-stroke.ql-fill) {
+  fill: var(--primary);
+}
+
+/* Infobulle de saisie des liens, traduite (le texte vient du CSS de Quill) */
+.rich-text-editor .ql-snow .ql-tooltip {
+  background-color: var(--popover);
+  color: var(--popover-foreground);
+  border-color: var(--border);
+  border-radius: calc(var(--radius) - 2px);
+  box-shadow: none;
+}
+.rich-text-editor .ql-snow .ql-tooltip input[type="text"] {
+  background-color: transparent;
+  border-color: var(--input);
+  color: inherit;
+}
+.rich-text-editor .ql-snow a {
+  color: var(--primary);
+}
+.rich-text-editor .ql-snow .ql-tooltip::before {
+  content: "Lien :";
+}
+.rich-text-editor .ql-snow .ql-tooltip[data-mode="link"]::before {
+  content: "Adresse du lien :";
+}
+.rich-text-editor .ql-snow .ql-tooltip a.ql-action::after {
+  content: "Modifier";
+}
+.rich-text-editor .ql-snow .ql-tooltip.ql-editing a.ql-action::after {
+  content: "Valider";
+}
+.rich-text-editor .ql-snow .ql-tooltip a.ql-remove::before {
+  content: "Retirer";
+}

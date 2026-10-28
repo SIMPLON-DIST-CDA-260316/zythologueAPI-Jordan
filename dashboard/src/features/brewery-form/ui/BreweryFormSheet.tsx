@@ -9,6 +9,7 @@ import { useFormValidation } from "@/shared/lib/hooks/use-form-validation";
 import { Button } from "@/shared/ui/button";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/shared/ui/field";
 import { FormField } from "@/shared/ui/form-field";
+import { RichTextEditor } from "@/shared/ui/rich-text-editor";
 import {
   Sheet,
   SheetContent,
@@ -16,7 +17,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/shared/ui/sheet";
-import { Textarea } from "@/shared/ui/textarea";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { CreateBreweryInput } from "@zythologue/shared";
 import { toast } from "sonner";
@@ -125,14 +125,12 @@ function BreweryForm({
           errors={errorsFor("website")}
         />
         <Field>
-          <FieldLabel htmlFor="description">Description</FieldLabel>
-          <Textarea
-            id="description"
+          <FieldLabel id="description-label">Description</FieldLabel>
+          <RichTextEditor
             name="description"
-            rows={4}
+            labelId="description-label"
             defaultValue={brewery?.description}
-            required
-            aria-invalid={!!descriptionErrors}
+            invalid={!!descriptionErrors}
           />
           <FieldError errors={descriptionErrors} />
         </Field>

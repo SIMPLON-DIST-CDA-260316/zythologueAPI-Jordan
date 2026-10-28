@@ -10,6 +10,7 @@ import { useFormValidation } from "@/shared/lib/hooks/use-form-validation";
 import { Button } from "@/shared/ui/button";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/shared/ui/field";
 import { FormField } from "@/shared/ui/form-field";
+import { RichTextEditor } from "@/shared/ui/rich-text-editor";
 import {
   Select,
   SelectContent,
@@ -25,7 +26,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/shared/ui/sheet";
-import { Textarea } from "@/shared/ui/textarea";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { CreateBeerInput } from "@zythologue/shared";
 import { toast } from "sonner";
@@ -168,15 +168,14 @@ function BeerForm({
           />
         </Field>
         <Field>
-          <FieldLabel htmlFor="description">
+          <FieldLabel id="description-label">
             Description (facultatif)
           </FieldLabel>
-          <Textarea
-            id="description"
+          <RichTextEditor
             name="description"
-            rows={4}
+            labelId="description-label"
             defaultValue={beer?.description ?? ""}
-            aria-invalid={!!descriptionErrors}
+            invalid={!!descriptionErrors}
           />
           <FieldError errors={descriptionErrors} />
         </Field>
