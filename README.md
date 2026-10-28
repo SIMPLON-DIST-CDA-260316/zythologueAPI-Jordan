@@ -125,7 +125,7 @@ Exemple de représentation JSON d'une bière telle que renvoyée par l'API :
 |-----------------|--------------------|---------------------------------------------------|
 | `id`            | number             | Identifiant unique de la bière                     |
 | `name`          | string             | Nom de la bière (unique)                          |
-| `description`   | string \| null     | Description libre                                  |
+| `description`   | string \| null     | HTML nettoyé (voir [Descriptions en HTML](#descriptions-en-html)) |
 | `price`         | number             | Prix (≥ 0)                                        |
 | `alcoholLevel`  | number             | Taux d'alcool en % (≥ 0)                          |
 | `isAlcoholFree` | boolean            | `true` si `alcoholLevel < 0.5`, `false` sinon      |
@@ -212,7 +212,7 @@ Crée une nouvelle bière.
 | Champ | Type | Obligatoire | Règles de validation |
 |---|---|---|---|
 | `name` | string | oui | non vide (après trim), 255 caractères max, doit être unique en base |
-| `description` | string \| null | non | non vide (après trim) si fourni, `null` accepté |
+| `description` | string \| null | non | HTML, 10 000 caractères max, nettoyé ; sans texte visible après nettoyage → `null` |
 | `price` | number | oui | 0 à 9999,99, 2 décimales max |
 | `alcoholLevel` | number | oui | 0 à 100, 1 décimale max |
 | `isAlcoholFree` | boolean | oui | doit correspondre à `alcoholLevel` : `true` si `alcoholLevel < 0.5`, `false` sinon |
@@ -257,7 +257,7 @@ Modifie partiellement une bière existante. Seuls les champs envoyés dans le bo
 | Champ | Type | Règles de validation |
 |---|---|---|
 | `name` | string | non vide (après trim), 255 caractères max, doit être unique en base |
-| `description` | string \| null | non vide (après trim) si fourni, `null` accepté (efface la description) |
+| `description` | string \| null | HTML, 10 000 caractères max, nettoyé ; `null` ou sans texte visible après nettoyage efface la description |
 | `price` | number | 0 à 9999,99, 2 décimales max |
 | `alcoholLevel` | number | 0 à 100, 1 décimale max |
 | `isAlcoholFree` | boolean | doit rester cohérent avec `alcoholLevel` une fois fusionné aux valeurs actuelles de la bière |
@@ -325,7 +325,7 @@ Exemple de représentation JSON d'une brasserie telle que renvoyée par l'API :
 |---------------|-----------------|-------------------------------------------------|
 | `id`          | number          | Identifiant unique de la brasserie              |
 | `name`        | string          | Nom de la brasserie (unique)                    |
-| `description` | string          | Description libre (obligatoire)                 |
+| `description` | string          | HTML nettoyé, obligatoire (voir [Descriptions en HTML](#descriptions-en-html)) |
 | `country`     | string          | Pays de la brasserie                            |
 | `city`        | string          | Ville de la brasserie                           |
 | `website`     | string \| null  | Site web de la brasserie                        |
@@ -401,7 +401,7 @@ Crée une nouvelle brasserie.
 | Champ | Type | Obligatoire | Règles de validation |
 |---|---|---|---|
 | `name` | string | oui | non vide (après trim), 255 caractères max, doit être unique en base |
-| `description` | string | oui | non vide (après trim) |
+| `description` | string | oui | HTML, 10 000 caractères max, nettoyé ; doit garder du texte visible après nettoyage |
 | `country` | string | oui | non vide (après trim), 100 caractères max |
 | `city` | string | oui | non vide (après trim), 100 caractères max |
 | `website` | string \| null | non | URL `http(s)` valide (2048 caractères max) si fourni, `null` accepté |
@@ -443,7 +443,7 @@ Modifie partiellement une brasserie existante. Seuls les champs envoyés dans le
 | Champ | Type | Règles de validation |
 |---|---|---|
 | `name` | string | non vide (après trim), 255 caractères max, doit être unique en base |
-| `description` | string | non vide (après trim) |
+| `description` | string | HTML, 10 000 caractères max, nettoyé ; doit garder du texte visible après nettoyage |
 | `country` | string | non vide (après trim), 100 caractères max |
 | `city` | string | non vide (après trim), 100 caractères max |
 | `website` | string \| null | URL `http(s)` valide si fourni, `null` accepté (efface le site web) |
@@ -487,6 +487,19 @@ Supprime une brasserie par son identifiant.
 | 204 | Brasserie supprimée | (vide) |
 | 400 | `id` non conforme | `{ "message": "L'identifiant n'est pas conforme" }` |
 | 404 | Aucune brasserie avec cet id | `{ "message": "Brasserie non trouvée" }` |
+
+---
+
+## Descriptions en HTML
+
+Les descriptions des bières et des brasseries sont saisies dans le dashboard avec un éditeur de texte riche (Quill) : elles contiennent du HTML. Un client qui l'affiche l'injecte tel quel dans sa page, donc un `<script>` enregistré en base serait une XSS stockée. L'éditeur ne protège de rien (n'importe qui peut appeler l'API avec Bruno ou curl) : **l'API nettoie elle-même** chaque description reçue, avec [`sanitize-html`](https://github.com/apostrophecms/sanitize-html) ([`api/src/schemas/richText.ts`](api/src/schemas/richText.ts)).
+
+- Balises conservées : `p`, `br`, `strong`, `em`, `u`, `ol`, `ul`, `li`, `a`. Tout le reste est supprimé (`script`, `style`, `img`, `iframe`…), contenu de `script`/`style` compris.
+- Attributs : seul `href` sur `a`, en `http`/`https` uniquement (un lien `javascript:` perd son `href`). `rel="noopener noreferrer nofollow"` et `target="_blank"` sont imposés. Aucun `style` ni `on*`.
+- 10 000 caractères max (avant nettoyage).
+- Sans texte visible une fois nettoyée (`<p><br></p>` d'un éditeur vide, ou un simple `<script>`) : la description d'une bière devient `null`, celle d'une brasserie (obligatoire) renvoie 400.
+
+Les anciennes descriptions en texte brut restent valides : du texte sans balise est du HTML correct.
 
 ---
 
@@ -717,7 +730,7 @@ La collection [`bruno/zythologue-api/`](bruno/zythologue-api/) s'utilise avec l'
 - **`authorization/`** : scénario 401, puis 403, puis 201 sur le catalogue (anonyme, puis client, puis admin).
 - **`beers/reviews/`** : scénario complet des avis (auteur tiré du jeton, doublon, propriétaire, modération admin). Le scénario supprime l'avis qu'il crée : on peut le relancer.
 - Les requêtes d'écriture des autres dossiers (`beers/`, `categories/`…) demandent d'être connecté en admin : lancer d'abord `auth/Login admin`.
-- Requêtes de non-régression sur la validation : décimales de trop (`beers/Create beer - too many decimals`), id hors de la plage `INTEGER` (`beers/Get beer by id - out of range`), site web en `javascript:` (`breweries/Create brewery - javascript url`), commentaire de plus de 2000 caractères (`beers/reviews/Create review - comment too long`), clé inconnue sur le journal (`beer-logs/Get beer logs - invalid query`).
+- Requêtes de non-régression sur la validation : décimales de trop (`beers/Create beer - too many decimals`), id hors de la plage `INTEGER` (`beers/Get beer by id - out of range`), site web en `javascript:` (`breweries/Create brewery - javascript url`), description HTML malveillante nettoyée (`beers/Update beer - XSS description`), description sans texte visible (`breweries/Create brewery - blank description`), commentaire de plus de 2000 caractères (`beers/reviews/Create review - comment too long`), clé inconnue sur le journal (`beer-logs/Get beer logs - invalid query`).
 - **Limite d'inscription** : chaque passage du dossier `auth/` envoie 3 inscriptions valides. Au-delà de 10 en 15 minutes, `Register` renvoie 429 : attendre, ou redémarrer l'API (le compteur est en mémoire).
 
 Les requêtes « anonymes » utilisent `{{anonBaseUrl}}` (`127.0.0.1` au lieu de `localhost`). Bruno range ses cookies par domaine, donc ces requêtes partent sans cookie, même si une session est ouverte sur `localhost`.

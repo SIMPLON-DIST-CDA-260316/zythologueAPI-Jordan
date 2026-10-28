@@ -1,0 +1,32 @@
+meta {
+  name: Create brewery - blank description
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/breweries
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Brasserie Muette",
+    "description": "<p><br></p><script>alert(1)</script>",
+    "country": "France",
+    "city": "Lille"
+  }
+}
+
+docs {
+  <p><br></p> est ce qu'envoie un éditeur vide : la chaîne n'est pas vide,
+  mais il ne reste aucun texte visible une fois le HTML nettoyé. La
+  description étant obligatoire, l'API répond 400 comme pour "".
+  Nécessite le cookie admin (authorization/Login admin).
+}
+
+assert {
+  res.status: eq 400
+  res.body.errors.fieldErrors.description: isDefined
+}

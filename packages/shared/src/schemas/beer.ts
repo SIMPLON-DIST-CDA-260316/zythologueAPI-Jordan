@@ -6,6 +6,8 @@ import { z } from "zod";
 const MAX_PRICE = 9999.99;
 const MAX_ALCOHOL_LEVEL = 100;
 const MAX_ID = 2_147_483_647; // brewery_id INTEGER
+// Colonne TEXT sans limite : on borne quand même, le HTML de l'éditeur gonfle vite
+const MAX_DESCRIPTION = 10_000;
 
 export const createBeerSchema = z
   .object({
@@ -14,7 +16,16 @@ export const createBeerSchema = z
       .trim()
       .min(1, "Le champ doit comprendre au moins 1 caractère")
       .max(255, "Le nom ne peut pas dépasser 255 caractères"),
-    description: z.string().trim().min(1).nullable().optional(),
+    description: z
+      .string()
+      .trim()
+      .min(1)
+      .max(
+        MAX_DESCRIPTION,
+        "La description ne peut pas dépasser 10 000 caractères",
+      )
+      .nullable()
+      .optional(),
     price: z
       .number("Le prix doit être un nombre")
       .nonnegative("Le prix ne peut pas être négatif")
@@ -43,7 +54,13 @@ export type CreateBeerInput = z.infer<typeof createBeerSchema>;
 export const patchBeerSchema = z
   .object({
     name: z.string().trim().min(1).max(255).optional(),
-    description: z.string().trim().min(1).nullable().optional(),
+    description: z
+      .string()
+      .trim()
+      .min(1)
+      .max(MAX_DESCRIPTION)
+      .nullable()
+      .optional(),
     price: z.number().nonnegative().max(MAX_PRICE).multipleOf(0.01).optional(),
     alcoholLevel: z
       .number()

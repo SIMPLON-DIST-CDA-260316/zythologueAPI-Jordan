@@ -1,13 +1,35 @@
+import {
+  createBeerSchema as sharedCreateBeerSchema,
+  patchBeerSchema as sharedPatchBeerSchema,
+} from "@zythologue/shared";
 import { z } from "zod";
 import { idSchema } from "./idSchema.ts";
+import { isBlankRichText, sanitizeRichText } from "./richText.ts";
 
-// Schémas du body : partagés avec le dashboard (formulaire bière)
-export {
-  createBeerSchema,
-  patchBeerSchema,
-  type CreateBeerInput,
-  type PatchBeerInput,
-} from "@zythologue/shared";
+export type { CreateBeerInput, PatchBeerInput } from "@zythologue/shared";
+
+// Description facultative : vide après nettoyage = pas de description (null).
+// undefined (PATCH sans description) reste undefined : le champ n'est pas modifié
+const withSanitizedDescription = <T extends { description?: string | null }>(
+  beer: T,
+): T =>
+  typeof beer.description === "string"
+    ? {
+        ...beer,
+        description: isBlankRichText(beer.description)
+          ? null
+          : sanitizeRichText(beer.description),
+      }
+    : beer;
+
+// Schémas du body : ceux partagés avec le dashboard (formulaire bière), plus
+// le nettoyage du HTML de la description, fait uniquement côté serveur
+export const createBeerSchema = sharedCreateBeerSchema.transform(
+  withSanitizedDescription,
+);
+export const patchBeerSchema = sharedPatchBeerSchema.transform(
+  withSanitizedDescription,
+);
 
 // Ici, seulement ce qui ne concerne que le serveur : query string et params
 export const getBeersQuerySchema = z

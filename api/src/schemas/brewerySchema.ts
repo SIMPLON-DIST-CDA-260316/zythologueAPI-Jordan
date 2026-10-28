@@ -1,13 +1,39 @@
+import {
+  createBrewerySchema as sharedCreateBrewerySchema,
+  patchBrewerySchema as sharedPatchBrewerySchema,
+} from "@zythologue/shared";
 import { z } from "zod";
 import { idSchema } from "./idSchema.ts";
+import { isBlankRichText, sanitizeRichText } from "./richText.ts";
 
-// Schémas du body : partagés avec le dashboard (formulaire brasserie)
-export {
-  createBrewerySchema,
-  patchBrewerySchema,
-  type CreateBreweryInput,
-  type PatchBreweryInput,
-} from "@zythologue/shared";
+export type { CreateBreweryInput, PatchBreweryInput } from "@zythologue/shared";
+
+// Description obligatoire : vide après nettoyage (<p><br></p>, <script>…) = 400,
+// comme une chaîne vide. undefined (PATCH sans description) passe tel quel
+const withSanitizedDescription = <T extends { description?: string }>(
+  brewery: T,
+  ctx: z.core.$RefinementCtx<T>,
+): T => {
+  if (brewery.description === undefined) return brewery;
+  if (isBlankRichText(brewery.description)) {
+    ctx.addIssue({
+      code: "custom",
+      message: "La description est obligatoire",
+      path: ["description"],
+    });
+    return z.NEVER;
+  }
+  return { ...brewery, description: sanitizeRichText(brewery.description) };
+};
+
+// Schémas du body : ceux partagés avec le dashboard (formulaire brasserie),
+// plus le nettoyage du HTML de la description, fait uniquement côté serveur
+export const createBrewerySchema = sharedCreateBrewerySchema.transform(
+  withSanitizedDescription,
+);
+export const patchBrewerySchema = sharedPatchBrewerySchema.transform(
+  withSanitizedDescription,
+);
 
 // Ici, seulement ce qui ne concerne que le serveur : query string et params
 export const getBreweriesQuerySchema = z

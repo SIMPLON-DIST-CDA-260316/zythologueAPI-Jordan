@@ -1,0 +1,40 @@
+meta {
+  name: Update beer - XSS description
+  type: http
+  seq: 8
+}
+
+patch {
+  url: {{baseUrl}}/beers/:id
+  body: json
+  auth: none
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "description": "<p>Bière brune <strong>trappiste</strong> aux arômes de <em>fruits</em>, de réglisse et d'épices.<script>alert(document.cookie)</script><img src=x onerror=alert(1)></p><ul><li onclick=\"alert(1)\" style=\"color:red\">Légèrement fruitée en bouche</li><li>Amertume douce et longue finale</li></ul><p><a href=\"javascript:alert(1)\">Piège</a> · <a href=\"https://www.chimay.com\" target=\"_self\">Site de Chimay</a></p>"
+  }
+}
+
+docs {
+  La description est du HTML saisi avec l'éditeur du dashboard, mais n'importe
+  qui peut appeler l'API : elle doit nettoyer elle-même. On garde la mise en
+  forme (strong, em, listes, liens http/https) et on supprime script, img,
+  attributs on* et style, et les liens javascript:. rel/target sont imposés.
+  Nécessite le cookie admin (authorization/Login admin).
+}
+
+assert {
+  res.status: eq 200
+  res.body.description: contains <strong>trappiste</strong>
+  res.body.description: notContains <script
+  res.body.description: notContains <img
+  res.body.description: notContains onclick
+  res.body.description: notContains style=
+  res.body.description: notContains javascript:
+  res.body.description: contains rel="noopener noreferrer nofollow"
+}

@@ -7,6 +7,9 @@ const websiteUrl = {
   message: "Le site web doit être une URL valide (https://…)",
 };
 
+// Colonne TEXT sans limite : on borne quand même, le HTML de l'éditeur gonfle vite
+const MAX_DESCRIPTION = 10_000;
+
 export const createBrewerySchema = z.object({
   name: z
     .string("Ce champ doit être une chaîne de caractères")
@@ -16,7 +19,11 @@ export const createBrewerySchema = z.object({
   description: z
     .string("Ce champ doit être une chaîne de caractères")
     .trim()
-    .min(1, "La description est obligatoire"),
+    .min(1, "La description est obligatoire")
+    .max(
+      MAX_DESCRIPTION,
+      "La description ne peut pas dépasser 10 000 caractères",
+    ),
   country: z
     .string("Ce champ doit être une chaîne de caractères")
     .trim()
@@ -39,7 +46,7 @@ export type CreateBreweryInput = z.infer<typeof createBrewerySchema>;
 export const patchBrewerySchema = z
   .object({
     name: z.string().trim().min(1).max(255).optional(),
-    description: z.string().trim().min(1).optional(),
+    description: z.string().trim().min(1).max(MAX_DESCRIPTION).optional(),
     country: z.string().trim().min(1).max(100).optional(),
     city: z.string().trim().min(1).max(100).optional(),
     website: z.url(websiteUrl).max(2048).nullable().optional(),

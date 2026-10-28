@@ -1,5 +1,10 @@
 import { MAX_ID } from "../schemas/idSchema.ts";
 
+// Descriptions des bières et brasseries : saisies avec l'éditeur du dashboard
+const RICH_TEXT =
+  "HTML nettoyé par l'API : seules les balises p, br, strong, em, u, ol, ul, li et a " +
+  "(href http/https uniquement, rel et target imposés) sont conservées";
+
 const beerSchema = {
   type: "object",
   properties: {
@@ -8,7 +13,7 @@ const beerSchema = {
     description: {
       type: "string",
       nullable: true,
-      description: "Description libre",
+      description: RICH_TEXT,
     },
     price: {
       type: "number",
@@ -162,7 +167,7 @@ const brewerySchema = {
   properties: {
     id: { type: "integer", description: "Identifiant unique de la brasserie" },
     name: { type: "string", description: "Nom de la brasserie (unique)" },
-    description: { type: "string", description: "Description libre (obligatoire)" },
+    description: { type: "string", description: `${RICH_TEXT} (obligatoire)` },
     country: { type: "string", description: "Pays de la brasserie" },
     city: { type: "string", description: "Ville de la brasserie" },
     website: {
@@ -653,7 +658,8 @@ export const openapiSpec = {
                   description: {
                     type: "string",
                     nullable: true,
-                    description: "Non vide (après trim) si fourni, null accepté",
+                    maxLength: 10000,
+                    description: `${RICH_TEXT}. Sans texte visible après nettoyage, enregistrée à null`,
                   },
                   price: { type: "number", minimum: 0, maximum: 9999.99, multipleOf: 0.01 },
                   alcoholLevel: { type: "number", minimum: 0, maximum: 100, multipleOf: 0.1 },
@@ -747,7 +753,12 @@ export const openapiSpec = {
                 type: "object",
                 properties: {
                   name: { type: "string", maxLength: 255 },
-                  description: { type: "string", nullable: true },
+                  description: {
+                    type: "string",
+                    nullable: true,
+                    maxLength: 10000,
+                    description: `${RICH_TEXT}. Sans texte visible après nettoyage, enregistrée à null`,
+                  },
                   price: { type: "number", minimum: 0, maximum: 9999.99, multipleOf: 0.01 },
                   alcoholLevel: { type: "number", minimum: 0, maximum: 100, multipleOf: 0.1 },
                   isAlcoholFree: { type: "boolean" },
@@ -1397,7 +1408,8 @@ export const openapiSpec = {
                   },
                   description: {
                     type: "string",
-                    description: "Non vide (après trim), obligatoire",
+                    maxLength: 10000,
+                    description: `${RICH_TEXT}. Doit garder du texte visible après nettoyage, sinon 400`,
                   },
                   country: { type: "string", maxLength: 100 },
                   city: { type: "string", maxLength: 100 },
@@ -1480,7 +1492,11 @@ export const openapiSpec = {
                 type: "object",
                 properties: {
                   name: { type: "string", maxLength: 255 },
-                  description: { type: "string" },
+                  description: {
+                    type: "string",
+                    maxLength: 10000,
+                    description: `${RICH_TEXT}. Doit garder du texte visible après nettoyage, sinon 400`,
+                  },
                   country: { type: "string", maxLength: 100 },
                   city: { type: "string", maxLength: 100 },
                   website: {
