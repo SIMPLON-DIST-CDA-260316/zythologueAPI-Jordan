@@ -11,6 +11,14 @@ export type Beer = {
   breweryId: number;
 };
 
+export type BeerTag = { id: number; name: string };
+
+// GET /beers/:id : la bière avec ses catégories et ingrédients ([] si aucun)
+export type BeerDetail = Beer & {
+  categories: BeerTag[];
+  ingredients: BeerTag[];
+};
+
 // Query params de GET /beers. Écrit à la main : getBeersQuerySchema décrit des
 // chaînes d'URL (z.coerce), son type d'entrée ne servirait à rien ici.
 export type BeerListParams = {

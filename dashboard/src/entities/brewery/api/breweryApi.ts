@@ -6,6 +6,8 @@ import type { Brewery, BreweryListParams } from "../model/types";
 export const getBreweries = (params: BreweryListParams) =>
   apiFetch<Paginated<Brewery>>("/breweries", { query: params });
 
+export const getBrewery = (id: number) => apiFetch<Brewery>(`/breweries/${id}`);
+
 // shortcut: une seule page de 100 (max de l'API) suffit pour les 12 brasseries,
 // passer à un combobox avec recherche côté API au-delà de 100
 export const getAllBreweries = () =>
@@ -35,5 +37,10 @@ export const breweryQueries = {
       queryKey: [...breweryQueries.all, "options"],
       queryFn: getAllBreweries,
       select: (page) => page.data,
+    }),
+  detail: (id: number) =>
+    queryOptions({
+      queryKey: [...breweryQueries.all, "detail", id],
+      queryFn: () => getBrewery(id),
     }),
 };

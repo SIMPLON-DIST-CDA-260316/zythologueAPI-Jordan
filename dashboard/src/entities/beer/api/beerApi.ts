@@ -1,10 +1,12 @@
 import { apiFetch, type Paginated } from "@/shared/api";
 import { keepPreviousData, queryOptions } from "@tanstack/react-query";
 import type { CreateBeerInput } from "@zythologue/shared";
-import type { Beer, BeerListParams } from "../model/types";
+import type { Beer, BeerDetail, BeerListParams } from "../model/types";
 
 export const getBeers = (params: BeerListParams) =>
   apiFetch<Paginated<Beer>>("/beers", { query: params });
+
+export const getBeer = (id: number) => apiFetch<BeerDetail>(`/beers/${id}`);
 
 export const createBeer = (input: CreateBeerInput) =>
   apiFetch<Beer>("/beers", { method: "POST", body: input });
@@ -26,5 +28,11 @@ export const beerQueries = {
       queryFn: () => getBeers(params),
       // La page affichée reste visible pendant le chargement de la suivante
       placeholderData: keepPreviousData,
+    }),
+  // Sous beerQueries.all : les invalidations existantes rafraîchissent aussi le détail
+  detail: (id: number) =>
+    queryOptions({
+      queryKey: [...beerQueries.all, "detail", id],
+      queryFn: () => getBeer(id),
     }),
 };
