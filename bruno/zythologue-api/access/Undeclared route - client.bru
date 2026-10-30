@@ -1,0 +1,15 @@
+meta {
+  name: Undeclared route - client
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/secret
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 403
+}

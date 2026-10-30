@@ -626,6 +626,21 @@ Défini dans [`api/src/middlewares/auth.ts`](api/src/middlewares/auth.ts), il en
 
 `requireAdmin` vaut `[authenticate, adminOnly]` : il authentifie, puis refuse (403) tout rôle autre que `admin`. Dans chaque route, le contrôle d'accès passe **avant** la validation et l'upload : un anonyme n'obtient aucun retour sur le format attendu, et aucun fichier n'est mis en mémoire pour lui.
 
+### Moindre privilège : tout est refusé par défaut
+
+[`api/src/routes/v1/access.ts`](api/src/routes/v1/access.ts) est monté **avant** tous les routeurs de `/api/v1`. Il déclare chaque couple méthode + chemin avec son niveau d'accès (public, connecté, admin). Toute requête qui n'y figure pas reçoit un **403 « Accès refusé », même pour un admin**. Une route oubliée est donc fermée (*fail closed*) au lieu d'être publique.
+
+- Les `requireAdmin` / `authenticate` des fichiers de routes sont **conservés** (double protection). `authenticate` ne relit pas l'utilisateur en base s'il a déjà été authentifié par `access.ts`.
+- Une URL inconnue sous `/api/v1` répond donc 403, et non 404.
+- `/uploads` et `/api-docs` sont montés dans `app.ts`, hors de cette politique : ils restent publics.
+- Limite : la politique autorise un couple méthode + chemin, pas un handler. Modifier ce que renvoie une route déjà déclarée relève de la revue de code.
+
+### Ajouter une route
+
+1. La déclarer dans `access.ts` avec son niveau d'accès, sans joker (`*splat`, regex). Sinon elle répond 403 à tout le monde.
+2. Garder la protection dans le fichier de routes (`requireAdmin`, `authenticate`).
+3. Ajouter un test Bruno par niveau d'accès refusé (anonyme → 401, client → 403).
+
 ### Qui peut faire quoi
 
 | Accès | Routes | Refus |
@@ -642,6 +657,7 @@ Toutes les routes protégées peuvent donc répondre, en plus des codes document
 |---|---|---|
 | 401 | Je ne sais pas qui tu es : pas de cookie, jeton invalide ou expiré | `{ "message": "Authentification requise" }` ou `{ "message": "Session invalide ou expirée" }` |
 | 403 | Je sais qui tu es, mais tu n'as pas le droit | `{ "message": "Accès réservé aux administrateurs" }` ou un message propre à la ressource |
+| 403 | Route non déclarée dans `access.ts` (y compris une URL inconnue), quel que soit le compte | `{ "message": "Accès refusé" }` |
 
 Comptes du seed pour tester (mot de passe `Motdepasse123!`) : `alice.dupont@example.com` (**admin**), `baptiste.martin@example.com` (**client**).
 

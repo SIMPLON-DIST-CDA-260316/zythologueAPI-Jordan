@@ -1,0 +1,15 @@
+meta {
+  name: Undeclared route - anonymous
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{anonBaseUrl}}/secret
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 403
+}

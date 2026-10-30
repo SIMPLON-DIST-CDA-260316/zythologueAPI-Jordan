@@ -1,0 +1,15 @@
+meta {
+  name: Public route - HEAD
+  type: http
+  seq: 3
+}
+
+head {
+  url: {{anonBaseUrl}}/beers
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+}

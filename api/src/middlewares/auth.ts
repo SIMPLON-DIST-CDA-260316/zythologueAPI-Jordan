@@ -21,6 +21,13 @@ export const authenticate = async (
   res: Response,
   next: NextFunction,
 ): Promise<void> => {
+  // Déjà exécuté pour cette requête : access.ts appelle authenticate (seul ou via
+  // requireAdmin), puis la route le rappelle en double protection. Seul ce middleware
+  // écrit res.locals.user, sa présence prouve un JWT déjà vérifié.
+  if (res.locals.user) {
+    next();
+    return;
+  }
   const token = readCookie(req, AUTH_COOKIE_NAME);
   res.locals.user = await authService.authenticate(token);
   next();
