@@ -1,7 +1,5 @@
 # 2. Identification : `POST /api/v1/auth/login`
 
-La preuve d'identification (JWT signé) est déposée dans un cookie `httpOnly` : elle n'apparaît jamais dans le body, et le JavaScript du navigateur ne peut pas la lire.
-
 ```mermaid
 sequenceDiagram
     autonumber
@@ -16,6 +14,7 @@ sequenceDiagram
     participant EH as errorHandler
 
     C->>X: POST /auth/login {email, password}
+    Note over X: access.ts : route déclarée publique, next("router")<br/>vers le routeur auth (détail en 3a)
     X->>RL: requête
     alt Plus de 5 échecs en 15 min depuis cette IP
         RL->>X: next(TooManyRequestsError)

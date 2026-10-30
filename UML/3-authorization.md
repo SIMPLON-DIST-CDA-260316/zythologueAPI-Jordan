@@ -4,10 +4,12 @@ Quatre niveaux d'accès :
 
 | Niveau | Qui | Exemples | Vérifié par |
 |---|---|---|---|
-| Public | tout le monde | tous les `GET` du catalogue, `GET /beers/:id/reviews` | aucun middleware |
-| Connecté | tout compte avec un jeton valide | `POST /beers/:id/reviews`, `GET /auth/me` | middleware `authenticate` |
-| Admin | rôle `admin` | écriture du catalogue, `GET /beer-logs` | `requireAdmin` = `[authenticate, adminOnly]` |
+| Public | tout le monde | tous les `GET` du catalogue, `GET /beers/:id/reviews` | `access.ts` (déclaration seule) |
+| Connecté | tout compte avec un jeton valide | `POST /beers/:id/reviews`, `GET /auth/me` | `access.ts` puis la route : middleware `authenticate` |
+| Admin | rôle `admin` | écriture du catalogue, `GET /beer-logs`, `GET /stats` | `access.ts` puis la route : `requireAdmin` = `[authenticate, adminOnly]` |
 | Propriétaire | l'auteur de la donnée (ou un admin pour la suppression) | `PATCH` / `DELETE /beers/:id/reviews/:reviewId` | `BeerReviewService` (règle métier) |
+
+Avant ces contrôles, la politique d'accès [`access.ts`](../api/src/routes/v1/access.ts) vérifie que le couple méthode + chemin est déclaré, et applique le niveau prévu. Toute route non déclarée est refusée (**403 « Accès refusé »**, même pour un admin). Les middlewares des fichiers de routes restent en place en double protection.
 
 Codes d'erreur : **401** signifie « je ne sais pas qui tu es » (pas de jeton, jeton invalide ou expiré). **403** signifie « je sais qui tu es, mais tu n'as pas le droit ».
 
@@ -22,6 +24,7 @@ sequenceDiagram
     autonumber
     actor C as Client
     participant X as Express (Router)
+    participant AP as access.ts
     participant AM as authenticate
     participant AS as AuthService
     participant AR as AuthRepository
@@ -32,7 +35,13 @@ sequenceDiagram
     participant EH as errorHandler
 
     C->>X: POST /categories {name, description}<br/>+ en-tête Cookie: zythologue_auth=JWT
-    X->>AM: requireAdmin = [authenticate, adminOnly]
+    X->>AP: politique d'accès (montée avant tous les routeurs)
+    alt Méthode + chemin non déclarés
+        AP->>EH: throw ForbiddenError
+        EH-->>C: 403 Accès refusé (même pour un admin)
+    end
+    Note over AP,AM: Route déclarée « admin » : access.ts exécute requireAdmin (détail ci-dessous),<br/>puis next("router") rend la main au routeur de la ressource.<br/>Son requireAdmin repasse sans relire la base (utilisateur déjà dans res.locals).
+    AP->>AM: requireAdmin = [authenticate, adminOnly]
     AM->>AM: readCookie(req, zythologue_auth)
     AM->>AS: authenticate(token)
     alt Pas de cookie
@@ -84,6 +93,8 @@ sequenceDiagram
 Exemple : Baptiste (client, id 2) note la bière 1 et tente de se faire passer pour l'utilisateur 99.
 
 > Pour la lisibilité, les erreurs sont dessinées directement vers `errorHandler`. Le chemin réel est le même qu'en 3a : throw, puis promesse rejetée dans le controller, puis `next(err)` par Express.
+>
+> `access.ts` n'est pas dessiné en 3b et 3c : ces routes y sont déclarées « connecté », il exécute donc `authenticate` en premier (comme en 3a). Le `authenticate` de la route trouve ensuite l'utilisateur déjà dans `res.locals` et ne relit pas la base.
 
 ```mermaid
 sequenceDiagram
